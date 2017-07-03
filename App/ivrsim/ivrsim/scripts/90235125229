@@ -1,0 +1,30 @@
+@@@ SEND PLAY
+{
+    "files": [ "youhave.wav", "newmessages.wav" ],
+    "terminateDigits": 123,
+    "interruptible": true,
+    "links": 
+    {
+        "result": ""
+    }
+}
+
+@@@ TIMEOUT 1000
+
+@@@ WAIT RESULT_PLAY
+
+@@@ SEND SAY
+{
+    "text":                   "Thank you for calling DINS!",
+    "language":               "English",
+    "terminateDigits":        123,
+    "interruptible":          false,
+    "links":
+    {
+        "result": ""
+    }
+}
+
+@@@ TIMEOUT 1000
+
+@@@ WAIT RESULT_SAY

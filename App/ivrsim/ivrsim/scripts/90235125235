@@ -1,0 +1,28 @@
+### Trigger example: keyword 'TRIGGER' is used to set special sequence of actions in case of received specified message from TAS.
+
+@@@ TRIGGER IVR_STOP
+    @@@ SEND FORWARD
+    {
+        "type":     "DropCall"
+    }
+    
+    @@@ EXIT
+@@@ END_TRIGGER
+
+
+@@@ SEND PLAY
+{
+    "files": [ "youhave.wav", "10.wav", "newmessages.wav" ],
+    "terminateDigits": 123,
+    "interruptible": true,
+    "links": 
+    {
+        "result": ""
+    }
+}
+
+
+@@@ WAIT RESULT_PLAY
+
+
+@@@ WAIT IVR_STOP

@@ -1,0 +1,53 @@
+### ####
+###
+### WARNING! PLEASE DO NOT CHANGE THIS SCRIPT - IT IS USED BY SCT-TESTS FOR IVR SIMULATOR.
+###
+### ####
+
+@@@ SEND PLAY
+{
+    "files": [ "youhave.wav", "newmessages.wav" ],
+    "terminateDigits": 123,
+    "interruptible": true,
+    "links": 
+    {
+        "result": ""
+    }
+}
+
+@@@ SEND STOP_PLAY
+@@@ WAIT RESULT_PLAY
+
+@@@ SEND SAY
+{
+    "files": [ "youhave.wav", "newmessages.wav" ],
+    "terminateDigits": 123,
+    "interruptible": true,
+    "links": 
+    {
+        "result": ""
+    }
+}
+
+@@@ SEND STOP_SAY
+@@@ WAIT RESULT_SAY
+
+@@@ SEND COLLECT
+### JSON COLLECT PAYLOAD
+{
+    "patterns": [
+        "pattern"
+    ],
+    
+    "timeout":           10,
+    "interDigitTimeout": 10,
+    "maxDigits":         5,
+    "terminateDigits":   "123",
+    "resetInput":        true,
+    "links": {
+        "result": ""
+    }
+}
+
+@@@ SEND STOP_COLLECT
+@@@ WAIT RESULT_COLLECT

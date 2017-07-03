@@ -1,0 +1,12 @@
+{
+	"sessionContext": {
+		"testRun": "true"
+	},
+
+	"links": {
+		"say": "/telephony/v1/account/10000000001/sessions/200000001/parties/300000001/say",
+		"play": "/telephony/v1/account/10000000001/sessions/200000001/parties/300000001/play",
+		"collect": "/telephony/v1/account/10000000001/sessions/200000001/parties/300000001/collect",
+		"forward": "/telephony/v1/account/10000000001/sessions/200000001/parties/300000001/forward"
+	}
+}
