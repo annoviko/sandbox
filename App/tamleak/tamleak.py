@@ -69,24 +69,28 @@ class tam_state:
 
 
 class tam_log_reader:
-    def __init__(self, filepath):
-        self.__filepath = filepath;
+    def __init__(self, tam_file_logs):
+        self.__tam_file_logs = tam_file_logs;
 
     def load(self):
         tam_state_evolution = { };
-        with open(self.__filepath, 'r', encoding='utf-8', errors='ignore') as log_file:
-            for line in log_file:
-                state = state_parser(line).parse();
-                if (state is None):
-                    continue;
-                
-                if (state.get_id() in tam_state_evolution):
-                    tam_state_evolution[state.get_id()].append(state);
-                
-                else:
-                    tam_state_evolution[state.get_id()] = [ state ];
+        for tam_log_file in self.__tam_file_logs:
+            with open(tam_log_file, 'r', encoding='utf-8', errors='ignore') as log_file_descr:
+                self.__process_filelog(log_file_descr, tam_state_evolution);
+        
+        return tam_state_evolution;
+
+    def __process_filelog(self, log_file_descr, tam_state_evolution):
+        for line in log_file_descr:
+            state = state_parser(line).parse();
+            if (state is None):
+                continue;
             
-            return tam_state_evolution;
+            if (state.get_id() in tam_state_evolution):
+                tam_state_evolution[state.get_id()].append(state);
+            
+            else:
+                tam_state_evolution[state.get_id()] = [ state ];
 
 
 
@@ -121,26 +125,31 @@ class state_parser:
 
 
 
+def callback_file_reader(option, opt, value, parser):
+    setattr(parser.values, option.dest, value.split(' '))
+
+
+
 if __name__ == '__main__':
     parser = OptionParser();
-    parser.add_option("-f", "--file", dest="filename", default="", 
-                      help="TAM log that should be checked for AM leakage.", metavar="LOG_FILE");
+    parser.add_option("-f", "--files", dest="files", type="string", default=[], action='callback', callback=callback_file_reader,
+                      help="TAM log files that should be checked for AM leakage.", metavar="LOG_FILES");
     parser.add_option("-l", "--limit", dest="limit", type="int", default=20, 
                       help="amount of states of leaked AM that should be displayed.", metavar="LIMIT");
     
-    (options, args) = parser.parse_args()
-
-    filepath = options.filename;
-    if (not os.path.isfile(options.filename)):
-        print("ERROR: TAM log is not specified.\n");
-        parser.print_help();
-        exit(-1);
+    (options, args) = parser.parse_args();
+    tam_log_files = options.files;
+    for tam_log in tam_log_files:
+        if (not os.path.isfile(tam_log)):
+            print("ERROR: TAM log is not found '" + tam_log + "'.\n");
+            parser.print_help();
+            exit(-1);
     
-    tam_evolutions = tam_log_reader(filepath).load();
+    tam_evolutions = tam_log_reader(tam_log_files).load();
     stats = analyser(tam_evolutions).calculate_system_statistic();
     
     print("------------------------------------------------------------------");
-    print("General information about AMs (file: " + filepath + "):");
+    print("General information about AMs (files: " + str(tam_log_files) + "):");
     print("------------------------------------------------------------------");
     print("* Amount of used AMs: " + str(stats.get_amount_used_state_machines()) + ";");
     print("* Amount of free AMs: " + str(stats.get_amount_free_state_machines()) + ";");
