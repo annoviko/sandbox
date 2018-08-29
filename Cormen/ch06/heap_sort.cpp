@@ -4,7 +4,7 @@
 
 
 void max_heapify(const std::size_t p_index, std::vector<std::size_t> & p_array) {
-	std::size_t left_index = (p_index + 1) << 1 - 1;
+	std::size_t left_index = ((p_index + 1) << 1) - 1;
 	std::size_t right_index = (p_index + 1) << 1;
 
 	std::size_t largest_index = p_index;
