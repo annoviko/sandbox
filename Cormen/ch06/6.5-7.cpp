@@ -71,6 +71,19 @@ void heap_insert_key(const std::size_t p_key, std::vector<std::size_t> & p_array
 
 
 
+void heap_delete(const std::size_t p_index, std::vector<std::size_t> & p_array) {
+    if (p_index == p_array.size() - 1) {
+        p_array.erase(p_array.end() - 1);
+    }
+    else {
+        std::swap(p_array[p_index], p_array.back());
+        p_array.erase(p_array.end() - 1);
+        max_heapify(p_index, p_array, p_array.size());
+    }
+}
+
+
+
 std::string to_string(std::vector<std::size_t> & p_array) {
     std::string result = "[ ";
     for (const auto & elem : p_array) {
@@ -82,39 +95,21 @@ std::string to_string(std::vector<std::size_t> & p_array) {
 }
 
 
-void test_extract_heap(const std::vector<std::size_t> & p_array) {
+void test_delete_element_heap(const std::vector<std::size_t> & p_array, const std::vector<std::size_t> & p_indexes) {
     std::vector<std::size_t> initial = p_array;
     std::vector<std::size_t> expect = p_array;
-    std::sort(expect.begin(), expect.end());
 
     std::vector<std::size_t> heap = p_array;
     build_max_heap(heap);
 
-    for (long long i = (long long) expect.size() - 1; i >= 0; i--) {
-        const std::size_t p_actual = heap_extract_maximum(heap);
-        const std::size_t p_expected = expect[i];
+    for (const auto & index : p_indexes) {
+        auto iter = std::find(expect.begin(), expect.end(), heap[index]);
+        expect.erase(iter);
 
-        if (p_actual != p_expected) {
-            std::cout << "[FAIL] " << to_string(initial) << std::endl;
-            std::cout << "Expected: " << p_expected << ", Actual: " << p_actual << std::endl;
-            return;
-        }
+        heap_delete(index, heap);
     }
 
-    std::cout << "[PASS] " << to_string(initial) << std::endl;
-}
-
-
-void test_insert_extract_heap(const std::vector<std::size_t> & p_elems) {
-    std::vector<std::size_t> initial = p_elems;
-    std::vector<std::size_t> expect = p_elems;
     std::sort(expect.begin(), expect.end());
-
-    std::vector<std::size_t> heap = { };
-
-    for (const auto & elem : p_elems) {
-        heap_insert_key(elem, heap);
-    }
 
     for (long long i = (long long) expect.size() - 1; i >= 0; i--) {
         const std::size_t p_actual = heap_extract_maximum(heap);
@@ -137,14 +132,19 @@ int main(int argc, char *argv[]) {
         { 2, 4, 3, 3, 1, 10, 12, 2 },
         { 7, 9, 101, 2, 3, 5, 6, 2 },
         { 12, 45, 12, 4, 5 },
-        { 10, 10, 10, 10, 12, 12, 12, 1, 1, 1 } };
+        { 10, 10, 10, 10, 12, 12, 12, 1, 1, 1 }
+    };
+
+    std::vector<std::vector<std::size_t>> elems = {
+        { 0, 3 },
+        { 4, 5 },
+        { 7 },
+        { 1, 1, 1 },
+        { 2, 4 }
+    };
 
     for (std::size_t i = 0; i < arrs.size(); i++) {
-        test_extract_heap(arrs[i]);
-    }
-
-    for (std::size_t i = 0; i < arrs.size(); i++) {
-        test_insert_extract_heap(arrs[i]);
+        test_delete_element_heap(arrs[i], elems[i]);
     }
 
     getchar();
