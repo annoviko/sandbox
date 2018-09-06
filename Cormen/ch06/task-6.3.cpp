@@ -55,6 +55,10 @@ struct place {
     bool in_range(const matrix & p_mtrx) {
         return (x < p_mtrx[0].size() && y < p_mtrx.size());
     }
+
+    std::size_t get(const matrix & p_mtrx) {
+        return p_mtrx[x][y];
+    }
 };
 
 
@@ -138,7 +142,34 @@ void insert_element(matrix & p_mtrx, const std::size_t p_element, const std::siz
 }
 
 
+bool contain2(matrix & p_mtrx, const std::size_t p_elem) {
+    /* Complexity: O(m + n) - start search from right-upper corner */
+    place pos = { 0, p_mtrx[0].size() - 1 };
+
+    while(true) {
+        if (pos.get(p_mtrx) == p_elem) {
+            return true;
+        }
+
+        place next = { pos.x + 1, pos.y };
+        if (next.in_range(p_mtrx) && next.get(p_mtrx) <= p_elem) {
+            pos = next;
+            continue;
+        }
+
+        next = { pos.x, pos.y - 1 };
+        if (next.in_range(p_mtrx) && next.get(p_mtrx) <= p_elem) {
+            pos = next;
+            continue;
+        }
+
+        return false;
+    }
+}
+
+
 bool contain(matrix & p_mtrx, const std::size_t p_elem) {
+    /* Complexity: O(log(m * n)) */
     place pos = { 0, 0 };
 
     std::stack<place> to_check;
@@ -259,12 +290,12 @@ int main(int argc, char *argv[]) {
     process_insert(test_matrix3, 1, test_matrix1.size() * test_matrix1[0].size());
 
     std::cout << std::endl << "Find Element" << std::endl;
-    std::cout << "T " << contain(test_matrix3, 23) << std::endl;
-    std::cout << "F " << contain(test_matrix3, 5) << std::endl;
-    std::cout << "T " << contain(test_matrix3, 6) << std::endl;
-    std::cout << "T " << contain(test_matrix3, 15) << std::endl;
-    std::cout << "T " << contain(test_matrix3, 12) << std::endl;
-    std::cout << "T " << contain(test_matrix4, 8) << std::endl;
+    std::cout << "T " << contain2(test_matrix3, 23) << std::endl;
+    std::cout << "F " << contain2(test_matrix3, 5) << std::endl;
+    std::cout << "T " << contain2(test_matrix3, 6) << std::endl;
+    std::cout << "T " << contain2(test_matrix3, 15) << std::endl;
+    std::cout << "T " << contain2(test_matrix3, 12) << std::endl;
+    std::cout << "T " << contain2(test_matrix4, 8) << std::endl;
     std::cout << std::endl;
 
     std::cout << "Sort Array" << std::endl;
