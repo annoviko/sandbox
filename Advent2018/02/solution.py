@@ -5,19 +5,19 @@ def read_input():
 
 class part1:
     def __init__(self):
-        self.__ids = read_input()
-        self.__two, self.__three = 0, 0
+        self._ids = read_input()
+        self._two, self._three = 0, 0
 
     def scan_boxes(self):
-        for id in self.__ids:
-            two, three = self.__scan_box(id)
-            self.__two += two
-            self.__three += three
+        for id in self._ids:
+            two, three = self._scan_box(id)
+            self._two += two
+            self._three += three
 
-        return self.__two * self.__three
+        return self._two * self._three
 
-    def __scan_box(self, id):
-        appearance = self.__get_appearance(id)
+    def _scan_box(self, id):
+        appearance = self._get_appearance(id)
         two, three = 0, 0
         for symbol, frequency in appearance.items():
             if two and three:
@@ -34,7 +34,7 @@ class part1:
         return two, three
 
 
-    def __get_appearance(self, id):
+    def _get_appearance(self, id):
         appearance = {}
         for symbol in id:
             if symbol in appearance:
@@ -45,4 +45,37 @@ class part1:
         return appearance
 
 
+class part2:
+    def __init__(self):
+        self._ids = read_input()
+        self._letters = ""
+
+    def scan_boxes(self):
+        for i in range(0, len(self._ids)):
+            for j in range(1, len(self._ids)):
+                result = self.__scan(self._ids[i], self._ids[j])
+                if result is not None:
+                    return result
+
+        return None
+
+    def __scan(self, id1, id2):
+        difference = 0
+        result = ""
+        for i in range(len(id1)):
+            if id1[i] != id2[i]:
+                difference += 1
+            else:
+                result += id1[i]
+
+            if difference > 1:
+                return None
+
+        if difference == 0:
+            return None
+
+        return result
+
+
 print(part1().scan_boxes())
+print(part2().scan_boxes())
