@@ -12,6 +12,42 @@ def read_data():
     return players, points
 
 
+class node:
+    def __init__(self, value):
+        self.value = value
+        self.next = None
+        self.prev = None
+
+    def remove(self):
+        if self.prev is not None:
+            self.prev.next = self.next
+
+        if self.next is not None:
+            self.next.prev = self.prev
+
+        return self.next
+
+    def insert_after(self, node):
+        if self.next is not None:
+            node.next = self.next
+            self.next.prev = node
+
+        self.next = node
+        node.prev = self
+
+    def get_prev(self, n, leaf):
+        result = self
+        remain = n
+        while remain > 0:
+            remain -= 1
+            if result.prev is None:
+                result = leaf
+            else:
+                result = result.prev
+
+        return result
+
+
 class game_field:
     def __init__(self, steps, players):
         self.step = 0
@@ -20,17 +56,24 @@ class game_field:
         self.last_removed = -1
         self.final_step = steps
         self.scores = [0] * players
-        self.field = [0]
+
+        self.root = node(0)
+        self.leaf = self.root
+        self.cur_marble = self.root
+
         self.current_player = 0
 
 
     def __print(self):
         print("[%d]" % (self.current_player + 1), end='')
-        for i in range(len(self.field)):
-            if self.field[i] == self.marble_value:
-                print("(%2d)" % self.field[i], end='')
+        cur_node = self.root
+        while cur_node is not None:
+            if cur_node.value == self.marble_value:
+                print("(%2d)" % cur_node.value, end='')
             else:
-                print(" %2d " % self.field[i], end='')
+                print(" %2d " % cur_node.value, end='')
+
+            cur_node = cur_node.next
 
         print('\n', end='')
 
@@ -44,29 +87,31 @@ class game_field:
 
             # if it is divided by 23
             if self.marble_value % 23 != 0:
-                if self.marble_poisition == len(self.field):
-                    self.marble_poisition = 1
-                    self.field.append(self.marble_value)
-
-                elif self.marble_poisition < len(self.field):
-                    self.field.insert(self.marble_poisition, self.marble_value)
-                    self.marble_poisition += 2
+                new_marble = node(self.marble_value)
+                if self.cur_marble is self.leaf:
+                    self.cur_marble.insert_after(new_marble)
+                    self.leaf = new_marble
+                    self.cur_marble = self.root
 
                 else:
-                    assert False
+                    self.cur_marble.insert_after(new_marble)
+                    self.cur_marble = new_marble.next
 
             else:
-                self.marble_poisition -= 9
-                if self.marble_poisition < 0:
-                    self.marble_poisition = len(self.field) - abs(self.marble_poisition)
+                marble_to_remove = self.cur_marble.get_prev(8, self.leaf)
 
-                remove_marble_value = self.field[self.marble_poisition]
-                self.scores[self.current_player] += self.marble_value + remove_marble_value
-                self.field.remove(remove_marble_value)
+                if marble_to_remove is self.leaf:
+                    self.leaf = marble_to_remove.prev
+                    self.cur_marble = self.root
+                    marble_to_remove.remove()
+                else:
+                    self.cur_marble = marble_to_remove.remove()
+                    if self.cur_marble is self.leaf:
+                        self.cur_marble = self.root
+                    else:
+                        self.cur_marble = self.cur_marble.next
 
-                self.marble_poisition += 2
-                if self.marble_poisition > len(self.field):
-                    self.marble_poisition = self.marble_poisition - len(self.field)
+                self.scores[self.current_player] += self.marble_value + marble_to_remove.value
 
             #self.__print()
 
