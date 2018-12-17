@@ -53,17 +53,44 @@ def draw_message(coordinates):
         print('\n', end='')
 
 
-def search_message(stars, duration):
-    for t in range(duration):
+def has_gaps(coordinates):
+    has_neighbor = [False] * len(coordinates)
+    for i in range(0, len(coordinates)):
+        if has_neighbor[i] is True:
+            continue
+
+        x1, y1 = coordinates[i][0], coordinates[i][1]
+
+        for j in range(0, len(coordinates)):
+            x2, y2 = coordinates[j][0], coordinates[j][1]
+            if (y1 == y2 and (x1 == x2 + 1 or x1 == x2 - 1)) or \
+               (x1 == x2 and (y1 == y2 + 1 or y1 == y2 - 1)) or \
+               ((x1 + 1 == x2 and y1 + 1 == y2) or (x1 - 1 == x2 and y1 + 1) or (x1 + 1 == x2 and y1 - 1 == y2) or (x1 - 1 == x2 and y1 - 1 == y2)):
+
+                has_neighbor[i] = True
+                has_neighbor[j] = True
+                continue
+
+        if has_neighbor[i] is False:
+            return True
+
+    return False
+
+
+def search_message(stars):
+    t = 0
+    while True:
         coordinates = []
         for obj in stars:
             coordinates.append(obj.get_position(t))
 
-        draw_message(coordinates)
-        command = input("To exit press 'e'")
-        if len(command) > 0 and command[0] != 'e':
+        if not has_gaps(coordinates):
+            draw_message(coordinates)
+            print("Time:", t)
             return
 
+        t += 1
 
-stars = read_stars(scale=0.001)
-search_message(stars, 100)
+
+stars = read_stars(scale=1)
+search_message(stars)
