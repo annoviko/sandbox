@@ -46,11 +46,11 @@ class field:
 
 
     def __compute_step(self, xc, yc, step):
-        result = 0
+        result = self.__field[yc + step][xc + step]
         for x in range(xc, step + xc):
             result += self.__field[yc + step][x]
 
-        for y in range(yc, step + yc - 1):
+        for y in range(yc, step + yc):
             result += self.__field[y][xc + step]
 
         return result
@@ -58,17 +58,18 @@ class field:
 
     def __compute_corner_with_size(self, xc, yc):
         optimal_size = 1
-        power = self.__compute_corner(xc, yc, optimal_size)
+        power = self.__field[yc][xc]
 
         max_xsize = self.__width - xc
         max_ysize = self.__height - yc
         max_size = min(max_xsize, max_ysize)
 
-        candidate_power = 0
-        for size in range(2, max_size):
+        candidate_power = self.__field[yc][xc]
+        for size in range(1, max_size):
             candidate_power += self.__compute_step(xc, yc, size)
             if candidate_power > power:
-                optimal_size = size
+                optimal_size = size + 1
+                power = candidate_power
 
         return power, optimal_size
 
@@ -78,8 +79,8 @@ class field:
         corner = (0, 0, size)
 
         for y in range(0, self.__height):
+            print(y)
             for x in range(0, self.__width):
-                print(x, y)
                 candidate_power, candidate_size = self.__compute_corner_with_size(x, y)
                 if candidate_power > power:
                     power = candidate_power
@@ -103,10 +104,10 @@ def part1():
 
 
 def part2():
-    cells = field(18, 300, 300)
+    cells = field(1718, 300, 300)
     corner = cells.find_optimal_corner_with_size()
-    print("1) Answer: %d,%d,%d" % (corner[0], corner[1], corner[2]))
+    print("2) Answer: %d,%d,%d" % (corner[0], corner[1], corner[2]))
 
 
-part1()
-#part2()
+#part1()
+part2()
