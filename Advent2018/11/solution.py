@@ -84,7 +84,7 @@ class field:
                 candidate_power, candidate_size = self.__compute_corner_with_size(x, y)
                 if candidate_power > power:
                     power = candidate_power
-                    corner = (x, y, candidate_power)
+                    corner = (x, y, candidate_size)
 
         return corner
 
