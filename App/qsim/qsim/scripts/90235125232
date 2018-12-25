@@ -1,0 +1,13 @@
+### ####
+###
+### WARNING! PLEASE DO NOT CHANGE THIS SCRIPT - IT IS USED BY SCT-TESTS FOR IVR SIMULATOR.
+###
+### ####
+
+@@@ TIMEOUT 1000
+
+@@@ SEND FORWARD
+{
+    "type":     "None",
+    "id":       "912390574"
+}

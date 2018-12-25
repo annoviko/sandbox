@@ -1,0 +1,53 @@
+### ####
+###
+### WARNING! PLEASE DO NOT CHANGE THIS SCRIPT - IT IS USED BY SCT-TESTS FOR IVR SIMULATOR.
+###
+### ####
+
+@@@ SEND PLAY
+### JSON PLAY PAYLOAD
+{
+    "files": [ "youhave.wav", "newmessages.wav" ],
+    "terminateDigits": 123,
+    "interruptible": true,
+    "links": 
+    {
+        "result": ""
+    }
+}
+
+@@@ WAIT RESULT_PLAY
+
+@@@ SEND SAY
+### JSON SEND PAYLOAD
+{
+    "text":                   "Thank you for calling DINS!",
+    "language":               "English",
+    "terminateDigits":        123,
+    "interruptible":          false,
+    "links": 
+    {
+        "result": ""
+    }
+}
+
+@@@ WAIT RESULT_SAY
+
+@@@ SEND COLLECT
+### JSON COLLECT PAYLOAD
+{
+    "patterns": [
+        "pattern"
+    ],
+    
+    "timeout":           10,
+    "interDigitTimeout": 10,
+    "maxDigits":         5,
+    "terminateDigits":   "123",
+    "resetInput":        true,
+    "links": {
+        "result": ""
+    }
+}
+
+@@@ WAIT RESULT_COLLECT

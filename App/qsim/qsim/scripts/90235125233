@@ -1,0 +1,30 @@
+### ####
+###
+### WARNING! PLEASE DO NOT CHANGE THIS SCRIPT - IT IS USED BY SCT-TESTS FOR IVR SIMULATOR.
+###
+### ####
+
+### Send play request to TAS
+@@@ SEND PLAY
+
+### JSON body of the play request to TAS.
+{
+    "files": [ "http://10.62.25.180/prompts/english__united_states_/youhave.wav", "http://10.62.25.180/prompts/english__united_states_/newmessages.wav" ],
+    "terminateDigits": 123,
+    "interruptible": true,
+    "links": 
+    {
+        "result": ""
+    }
+}
+
+### Just sleep 1000 ms.
+@@@ TIMEOUT 1000
+
+### Wait when TAS sends play result http using callback command.
+### @@@ WAIT RESULT_PLAY
+
+@@@ SEND FORWARD
+{
+    "type":     "DropCall"
+}

@@ -1,0 +1,53 @@
+### Example of usage conditions in scripts
+
+@@@ SEND PLAY
+{
+    "files": [ "youhave.wav", "10.wav", "newmessages.wav" ],
+    "terminateDigits": 123,
+    "interruptible": true,
+    "links": 
+    {
+        "result": ""
+    }
+}
+
+@@@ WAIT RESULT_PLAY
+
+@@@ SEND COLLECT
+{
+   "patterns": [
+        "xxx"
+    ],
+    "timeout":           10000,
+    "interDigitTimeout": 5000,
+    "maxDigits":         9,    
+    "resetInput":        true,
+    "links": {
+        "result": "/telephony/v1/account/$(accountId)/routing-services/ivrs/$(scriptId)/instances/$(sessionId)/actions/collects/{collectId}"
+    }
+}
+
+@@@ WAIT RESULT_COLLECT
+@@@ MOVE_JSON $(VARIABLE)
+
+@@@ IF ("digits" in $(VARIABLE)) and ($(VARIABLE)["digits"] == "12#")
+    @@@ SEND PLAY
+    {
+        "files": [ "hello.wav" ],
+        "interruptible": true,
+        "links": 
+        {
+            "result": "/telephony/v1/account/$(accountId)/routing-services/ivrs/$(scriptId)/instances/$(sessionId)/actions/plays/{playId}"
+        }
+    }
+@@@ ELSE
+    @@@ SEND PLAY
+    {
+        "files": [ "bye.wav" ],
+        "interruptible": true,
+        "links": 
+        {
+            "result": "/telephony/v1/account/$(accountId)/routing-services/ivrs/$(scriptId)/instances/$(sessionId)/actions/plays/{playId}"
+        }
+    }
+@@@ END_IF
