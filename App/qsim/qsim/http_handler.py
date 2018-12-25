@@ -89,7 +89,7 @@ class http_handler(SimpleHTTPRequestHandler):
                 return
 
             # extract TAS request for session and attach additional information
-            json_request = self.rfile.read(int(self.headers['Content-Length']))
+            json_request = self.rfile.read(int(self.headers['Content-Length'])).decode('utf-8')
             tas_request = json.loads(json_request)
             tas_request["tas_address"] = {"ip": tas_host, "port": tas_port}
             tas_request["account_id"] = request[struct_field.account_id]

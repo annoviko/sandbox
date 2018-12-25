@@ -50,10 +50,6 @@ class task(object):
         return reply_code
 
 
-    def get_script_id(self):
-        return self.__context.get_script_id()
-
-
     def get_id(self):
         return self.__context.get_id()
 
@@ -157,7 +153,7 @@ class task(object):
 
     def __process_send_command(self, method, tas_content, arguments):
         logging.debug("(QSim Service task '%s') command SEND is executing...", self.__context.get_id())
-        
+
         tas_link = None
         tas_method = None
         
@@ -181,9 +177,9 @@ class task(object):
             tas_link = self.__context.get_tas_link_forward()
             tas_method = "PUT"
 
-        elif method == "EXCEPTION":
-            tas_link = self.__context.get_tas_link_exception()
-            tas_method = "PUT"
+        else:
+            logging.error("Unknown send command '%s'.", method)
+            return
 
         if len(arguments) > 0:
             tas_link_pattern = arguments[0]
@@ -196,14 +192,16 @@ class task(object):
         if (status >= 200) and (status <= 299):
             if tas_method == "POST":
                 response = json.loads(json_response)
-                if response.get("id", None) == None:
+                if response.get("id", None) is None:
                     logging.error("(QSim Service task '%s') TAS reply to '%s' command '%s' without JSON body with 'id' key.", self.__context.get_id(), tas_method, method)
                 
                 else:
                     action_id = response['id']
 
-                    if method == "PLAY": self.__context.set_play_id(action_id)
-                    elif method == "COLLECT": self.__context.set_collect_id(action_id)
+                    if method == "PLAY":
+                        self.__context.set_play_id(action_id)
+                    elif method == "COLLECT":
+                        self.__context.set_collect_id(action_id)
                     
                     logging.info("(QSim Service task '%s') TAS accepts '%s' command '%s' and return action id: '%s'.", self.__context.get_id(), tas_method, method, action_id)
         
@@ -241,7 +239,7 @@ class task(object):
         content = tas_content
         if (tas_content is not None) and (len(tas_content) > 0):
             content = content.replace("$(accountId)", self.__context.get_account_id())
-            content = content.replace("$(taskId)", self.__context.get_script_id())
+            content = content.replace("$(taskId)", self.__context.get_task_id())
             content = content.replace("$(sessionId)", self.__context.get_id())
             content = content.replace("$(partyId)", self.__context.get_id())
             

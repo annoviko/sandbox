@@ -31,7 +31,7 @@ class http_parser:
                 return http_parser.extract_qsim_stop_request(reg_object)
             
         elif method == http_method.HTTP_GET:
-            reg_object = re.match("/telephony/v1/account/(\d+)/services/queue/(\d+)/instances/(\d+)", path)
+            reg_object = re.match("/telephony/v1/account/(\d+)/services/queue/(\d+)/voice/tasks/(\d+)", path)
             if reg_object:
                 return http_parser.extract_qsim_execution_status(reg_object)
         

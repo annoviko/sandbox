@@ -5,23 +5,23 @@ from qsim.script import script
 
 class task_context:
     # static counter
-    __id_counter_generator = 1000000
+    __id_counter_generator = 1820000
 
 
-    def __init__(self, script_id, tas_request):
-        self.__script_id = script_id
+    def __init__(self, queue_id, tas_request):
+        self.__script_id = queue_id
         self.__tas_info = tas_request
         self.__action_id = None
         
         self.__play_id = None
         self.__collect_id = None
 
-        self.__session_id = task_context.__generate_session_id()
+        self.__task_id = task_context.__generate_task_id()
         
         self.__cursor = 0
         self.__variables = {}
         
-        block = script.load(script_id)
+        block = script.load(queue_id)
         self.__actions = block.get_commands()
         self.__triggers = block.get_triggers()
         self.__functions = block.get_functions()
@@ -29,9 +29,9 @@ class task_context:
         self.__last_input_message = None
         
         if len(self.__actions) == 0:
-            logging.warning("Script-file (script id: '%s') does not have any actions for TAS.", script_id)
+            logging.warning("Script-file (script id: '%s') does not have any actions for TAS.", queue_id)
 
-        logging.debug("Q Service context is generated (session id: '%s', script id: '%s').", self.__session_id, self.__script_id)
+        logging.debug("Q Service context is generated (task id: '%s', script id: '%s').", self.__task_id, self.__script_id)
         logging.debug("Q Service script '%s' info (commands: '%d', triggers: '%d', functions: '%d').", self.__script_id, len(self.__actions), len(self.__triggers), len(self.__functions))
 
 
@@ -106,14 +106,14 @@ class task_context:
 
 
     def get_id(self):
-        return self.__session_id
+        return self.__task_id
 
 
     def get_account_id(self):
         return self.__tas_info["account_id"]
 
 
-    def get_script_id(self):
+    def get_task_id(self):
         return self.__script_id
 
 
@@ -126,30 +126,38 @@ class task_context:
 
 
     def get_tas_link_play(self):
-        return self.__tas_info["links"].get("play", None)
+        return ""
+
+
+    def get_tas_link_session(self):
+        return "%s:%s/telephony/v1/account/%s/sessions/%s" % (self.get_tas_address(), str(self.get_tas_port()), self.__tas_info["accountId"], self.__tas_info["sessionId"])
+
+
+    def get_tas_link_party(self):
+        return "%s/parties/%s" % (self.get_tas_link_session(), self.__tas_info["partyId"])
+
+
+    def get_tas_link_start_play(self):
+        return "%s/play" % (self.get_tas_link_party())
 
 
     def get_tas_link_stop_play(self):
-        return self.__tas_info["links"].get("play", None) + "/" + str(self.get_play_id())
+        return "%s/play/%s" % (self.get_tas_link_party(), str(self.get_play_id()))
 
 
     def get_tas_link_collect(self):
-        return self.__tas_info["links"].get("collect", None)
+        return "%s/collect" % (self.get_tas_link_party())
 
 
     def get_tas_link_stop_collect(self):
-        return self.__tas_info["links"].get("collect", None) + "/" + str(self.get_collect_id())
+        return "%s/collect/%s" % (self.get_tas_link_party(), str(self.get_collect_id()))
 
 
     def get_tas_link_forward(self):
-        return self.__tas_info["links"].get("forward", None)
-
-
-    def get_tas_link_exception(self):
-        return self.__tas_info["links"].get("exception", None)
+        return "%s/forward" % (self.get_tas_link_party())
 
 
     @staticmethod
-    def __generate_session_id():
+    def __generate_task_id():
         task_context.__id_counter_generator += 1
         return str(task_context.__id_counter_generator)

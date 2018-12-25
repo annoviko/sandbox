@@ -36,7 +36,8 @@ class logging:
     @staticmethod
     def __write(message_prefix, message_color, file_caller, message, *args):
         with logging.__resource_locker:
-            print(logging.__time_mark() + message_color + message_prefix + file_caller + ": " + message + color.DEFAULT) % args
+            message = logging.__time_mark() + message_color + message_prefix + file_caller + ": " + message + color.DEFAULT
+            print(message % args)
 
             if logging.__file_log is not None:
                 file_descriptor = open(logging.__file_log, 'a')

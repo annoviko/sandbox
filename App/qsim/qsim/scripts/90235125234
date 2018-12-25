@@ -1,4 +1,0 @@
-@@@ SEND STOP_COLLECT /telephony/v1/account/$(accountId)/sessions/$(tasSessionId)/parties/$(partyId)/collect/45678
-
-
-@@@ SEND STOP_COLLECT /telephony/v1/account/$(accountId)/sessions/$(tasSessionId)/parties/$(partyId)/collect/12345

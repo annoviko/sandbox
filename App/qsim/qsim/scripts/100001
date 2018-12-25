@@ -1,0 +1,21 @@
+@@@ SEND PLAY
+
+### JSON body of the play request to TAS.
+{
+    "mediaUrls":
+    [
+      "http://10.62.25.180/prompts/english__united_states_/youhave.wav",
+      "http://10.62.25.180/prompts/english__united_states_/newmessages.wav"
+    ],
+    "interruptible":    true,
+    "repeat":           true,
+    "onPlayed":         "/telephony/v1/account/$(accountId)/services/queue/$(taskId)/voice/tasks/$(sessionId)/actions/plays/{playId}",
+    "onFailure":        "/telephony/v1/account/$(accountId)/services/queue/$(taskId)/voice/tasks/$(sessionId)/actions/plays/{playId}"
+}
+
+### Just sleep 1000 ms.
+@@@ TIMEOUT 50000
+
+### Wait when TAS sends play result http using callback command.
+@@@ WAIT RESULT_PLAY
+
