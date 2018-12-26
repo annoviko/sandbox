@@ -13,9 +13,9 @@ import time
 
 
 class task(object):
-    def __new__(cls, script_id, tas_request, manager):
-        if script.exist(script_id) is False:
-            logging.warning("Script-file (script id: '%s') is not found - reject to create session.", script_id)
+    def __new__(cls, task_id, tas_request, manager):
+        if script.exist(task_id) is False:
+            logging.warning("Script-file (task id: '%s') is not found - reject to create session.", task_id)
             return None
 
         instance = object.__new__(cls)

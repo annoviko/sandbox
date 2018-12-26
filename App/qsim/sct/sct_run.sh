@@ -1,0 +1,1 @@
+pybot sct_*.robot

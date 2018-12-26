@@ -66,6 +66,11 @@ class configuration:
 
 
     @staticmethod
+    def get_statistical_logger():
+        return configuration.__get_boolean("GENERAL", 'statistical_logger_enable')
+
+
+    @staticmethod
     def get_tas_port():
         return configuration.__get_section("NETWORK")['tas_port_server']
 
