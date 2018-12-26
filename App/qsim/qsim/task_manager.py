@@ -41,11 +41,11 @@ class task_manager:
 
 
     @staticmethod
-    def exist(session_id):
+    def exist(task_id):
         with task_manager.__resource_locker:
-            logging.debug("Amount of sessions '%d' (search session id '%s').", len(task_manager.__tasks), session_id)
+            logging.debug("Amount of tasks '%d' (search task id '%s').", len(task_manager.__tasks), task_id)
             
-            if session_id in task_manager.__tasks:
+            if task_id in task_manager.__tasks:
                 return True
         
         return False

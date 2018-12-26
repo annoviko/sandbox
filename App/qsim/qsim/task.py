@@ -13,17 +13,17 @@ import time
 
 
 class task(object):
-    def __new__(cls, task_id, tas_request, manager):
-        if script.exist(task_id) is False:
-            logging.warning("Script-file (task id: '%s') is not found - reject to create session.", task_id)
+    def __new__(cls, queue_id, tas_request, manager):
+        if script.exist(queue_id) is False:
+            logging.warning("Script-file (queue id: '%s') is not found - reject to create session.", queue_id)
             return None
 
         instance = object.__new__(cls)
         return instance
 
 
-    def __init__(self, script_id, tas_request, manager):
-        self.__context = task_context(script_id, tas_request)
+    def __init__(self, queue_id, tas_request, manager):
+        self.__context = task_context(queue_id, tas_request)
         self.__active = True
         self.__manager = manager
         

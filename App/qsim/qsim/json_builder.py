@@ -9,14 +9,6 @@ class json_builder:
     
     
     @staticmethod
-    def stop_qsim_response():
-        response = {}
-        response["content"] = [{"parameter":  "",
-                                "value":      ""}]
-        return json.dumps(response)
-    
-    
-    @staticmethod
     def execution_status_response(state):
         response = {"state": ""}
         return json.dumps(response)

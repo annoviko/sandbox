@@ -45,7 +45,7 @@ class http_handler(SimpleHTTPRequestHandler):
                 self.__send_response(configuration.get_failure_execution_status_code(), None, configuration.get_failure_execution_status_message())
                 return
 
-            session_id  = request[struct_field.session_id]
+            session_id = request[struct_field.session_id]
             #script_id   = request[struct_field.script_id];
             
             if self.__get_session_manager().exist(session_id):
@@ -76,7 +76,7 @@ class http_handler(SimpleHTTPRequestHandler):
         logging.info("Receive HTTP POST request from TAS: '%s' (address: '%s:%s').", self.path, tas_host, tas_port)
         request = http_parser.parse(http_method.HTTP_POST, self.path)
         
-        if (request == None):
+        if request is None:
             self.__send_response(http_code.HTTP_BAD_REQUEST, "\"Impossible to parse POST request.\"")
             return
 
@@ -94,15 +94,15 @@ class http_handler(SimpleHTTPRequestHandler):
             tas_request["tas_address"] = {"ip": tas_host, "port": tas_port}
             tas_request["account_id"] = request[struct_field.account_id]
             
-            session_id = self.__get_session_manager().create(request[struct_field.script_id], tas_request)
-            if session_id is None:
-                self.__send_response(http_code.HTTP_NOT_FOUND, "\"Session '" + str(session_id) + "' is not found.\"")
+            task_id = self.__get_session_manager().create(request[struct_field.script_id], tas_request)
+            if task_id is None:
+                self.__send_response(http_code.HTTP_NOT_FOUND, "\"Session '" + str(task_id) + "' is not found.\"")
                 return
             
-            json_response = json_builder.start_qsim_response(session_id)
+            json_response = json_builder.start_qsim_response(task_id)
             self.__send_response(http_code.HTTP_OK_CREATED, json_response)
             
-            self.__get_session_manager().launch(session_id)
+            self.__get_session_manager().launch(task_id)
         #
         # RESULT_ACTION
         #
@@ -180,10 +180,9 @@ class http_handler(SimpleHTTPRequestHandler):
         if self.__get_session_manager().exist(session_id) is True:
             reply_code = self.__get_session_manager().delete(session_id)
             if reply_code is None:
-                reply_code = http_code.HTTP_OK_DELETED
-            
-            json_response = json_builder.stop_qsim_response()
-            self.__send_response(reply_code, json_response)
+                reply_code = http_code.HTTP_OK_NO_CONTENT
+
+            self.__send_response(reply_code)
         
         else:
             self.__send_response(http_code.HTTP_NOT_FOUND, "\"Session '" + str(session_id) + "' is not found.\"")
