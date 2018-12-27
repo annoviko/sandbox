@@ -157,6 +157,10 @@ class task_context:
         return "%s/forward" % (self.get_tas_link_party())
 
 
+    def get_task_link_hunt(self):
+        return "%s/hunt" % (self.get_tas_link_session())
+
+
     @staticmethod
     def __generate_task_id():
         task_context.__id_counter_generator += 1

@@ -177,6 +177,10 @@ class task(object):
             tas_link = self.__context.get_tas_link_forward()
             tas_method = "PUT"
 
+        elif method == "HUNT":
+            tas_link = self.__context.get_task_link_hunt()
+            tas_method = "POST"
+
         else:
             logging.error("Unknown send command '%s'.", method)
             return

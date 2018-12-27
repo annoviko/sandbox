@@ -1,6 +1,7 @@
 class tas_command_type:
     TASK_START = 'TASK_START'
     TASK_STOP = 'TASK_STOP'
+    HUNT = 'HUNT'
     EXECUTION_STATUS = 'EXECUTION_STATUS'
     SERVICE_STATUS = 'SERVICE_STATUS'
 
