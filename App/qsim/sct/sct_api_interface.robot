@@ -1,56 +1,60 @@
 *** Settings ***
 
 Library         OperatingSystem
-Library         HttpLibrary.HTTP
+Library         HttpCtrl.Client
 
-Resource        variables.robot
-
-Test Setup      Create HTTP Context     ${QSIM_HOST}
+Test Setup      Initialize Client   192.168.55.77   8000
 
 
 *** Test Cases ***
 
 Start and Stop Task Without Scenario
-    ${task id}=   Start Task   sct_10000001
-    Stop Task     ${task id}
+    ${scenario id}=   Set Variable   10000001
+
+    ${task id}=   Start Task       ${scenario id}
+    Stop Task     ${scenario id}   ${task id}
 
 
 *** Keywords ***
-Get Start Task URI
+Get Start Task URL
     [Arguments]   ${scenario id}
-    ${uri}=    Catenate   /telephony/v1/account/400130275008/services/queue/   ${scenario id}
-    ${uri}=    Catenate   ${uri}   /voice/tasks
-    [Return]   ${uri}
+    ${url}=    Catenate   SEPARATOR=   /telephony/v1/account/400130275008/services/queue/   ${scenario id}
+    ${url}=    Catenate   SEPARATOR=   ${url}   /voice/tasks
+    [Return]   ${url}
 
 
-Get Stop Task URI
+Get Stop Task URL
     [Arguments]   ${scenario id}   ${task id}
-    ${uri}=    Get Start Task URI   ${scenario id}
-    ${uri}=    Catenate   ${uri}    /${task id}
-    [Return]   ${uri}
+    ${url}=    Get Start Task URL   ${scenario id}
+    ${url}=    Catenate   SEPARATOR=   ${url}    /${task id}
+    [Return]   ${url}
 
 
 Start Task
     [Arguments]   ${scenario id}
-    ${request content}=   Get File   data/start_task_json
-    Set Request Body      ${request content}
+    ${request body}=   Get File   data/start_task_json
+    ${url}=            Get Start Task URL   ${scenario id}
+
     Set Request Header    Content-Type   application/json-rpc
-    
-    Next Request Should Have Status Code   201
-    ${uri}=   Get Start Task URI   sct_10000001
-    POST      ${uri}
+
+    Send HTTP Request   POST   ${url}   ${request body}
+
+    ${response status}=   Get Response Status
+    ${expected status}=   Convert To Integer   201
+    Should Be Equal   ${response status}   ${expected status}
 
     ${response content}=   Get Response Body
-    Should Contain         ${response content}   ${scenario id}
-
-    ${json response}=      Parse Json            ${response content}
-    ${task id}=            Get Json Value   ${json response}   /id
+    ${task id}=            Get Json Value   ${response content}   id
 
     [Return]   ${task id}
 
 
 Stop Task
     [Arguments]   ${scenario id}   ${task id}
-    Next Request Should Have Status Code   204
-    ${uri}=   Get Stop Task URI   ${scenario id}   ${task id}
-    DELETE    ${uri}
+    ${url}=   Get Stop Task URL   ${scenario id}   ${task id}
+
+    Send HTTP Request   DELETE   ${url}
+
+    ${response status}=   Get Response Status
+    ${expected status}=   Convert To Integer   204
+    Should be Equal   ${response status}   ${expected status}
