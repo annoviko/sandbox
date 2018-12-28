@@ -40,7 +40,7 @@ class http_client:
             logging.debug("HTTP response (code: %d) from TAS:\n%s", response_status, response_body)
 
         except:
-            response_status = 404
+            response_status = 600
             logging.error("Impossible to communicate correctly with TAS using HTTP.")
               
         finally:

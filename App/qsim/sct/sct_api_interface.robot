@@ -2,8 +2,12 @@
 
 Library         OperatingSystem
 Library         HttpCtrl.Client
+Library         HttpCtrl.Server
+Library         HttpCtrl.Json
 
-Test Setup      Initialize Client   192.168.55.77   8000
+
+Test Setup      Start HTTP Client and Server
+Test Teardown   Stop Server
 
 
 *** Test Cases ***
@@ -13,6 +17,17 @@ Start and Stop Task Without Scenario
 
     ${task id}=   Start Task       ${scenario id}
     Stop Task     ${scenario id}   ${task id}
+
+
+Start Play Scenario
+    ${scenario id}=   Set Variable   10000002
+
+    ${task id}=        Start Task       ${scenario id}
+    ${callback url}=   Wait For Play Request
+    Reply Success To Play Request
+
+    Send Play Complete Response   ${callback url}
+
 
 
 *** Keywords ***
@@ -58,3 +73,32 @@ Stop Task
     ${response status}=   Get Response Status
     ${expected status}=   Convert To Integer   204
     Should be Equal   ${response status}   ${expected status}
+
+
+Wait For Play Request
+    Wait For Request
+    ${method}=    Get Request Method
+    ${body}=      Get Request Body
+
+    ${url}=    Get Json Value   ${body}   onPlayed
+    [Return]   ${url}
+
+
+Reply Success To Play Request
+    ${body}=   Get File   data/resp_id_json
+    Set Reply Header      Content-Type   application/json-rpc
+    Reply By   200   ${body}
+
+
+Send Play Complete Response
+    [Arguments]   ${callback url}
+    Send HTTP Request   POST   ${callback url}
+
+    ${response status}=   Get Response Status
+    ${expected status}=   Convert To Integer   201
+    Should Be Equal   ${response status}   ${expected status}
+
+
+Start HTTP Client and Server
+    Initialize Client   192.168.55.77   8000
+    Start Server        192.168.55.77   8080

@@ -10,23 +10,11 @@
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file pinned="false" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/qsim/http_server.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="578">
-              <caret line="34" selection-start-line="34" selection-end-line="40" selection-end-column="36" />
-              <folding>
-                <element signature="e#0#34#0" expanded="true" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/qsim/http_handler.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="481">
-              <caret line="192" column="8" lean-forward="true" selection-start-line="192" selection-start-column="8" selection-end-line="192" selection-end-column="8" />
+            <state relative-caret-position="617">
+              <caret line="107" column="56" lean-forward="true" selection-start-line="107" selection-start-column="56" selection-end-line="107" selection-end-column="56" />
               <folding>
                 <element signature="e#0#48#0" expanded="true" />
               </folding>
@@ -34,13 +22,37 @@
           </provider>
         </entry>
       </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/qsim/task_context.py">
+      <file pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/qsim/http_client.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="2703">
-              <caret line="159" column="26" selection-start-line="159" selection-start-column="8" selection-end-line="159" selection-end-column="26" />
+            <state relative-caret-position="674">
+              <caret line="42" column="33" selection-start-line="42" selection-start-column="33" selection-end-line="42" selection-end-column="33" />
               <folding>
-                <element signature="e#0#44#0" expanded="true" />
+                <element signature="e#0#18#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/qsim/code_block.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="532">
+              <caret line="148" column="23" selection-start-line="148" selection-start-column="23" selection-end-line="148" selection-end-column="23" />
+              <folding>
+                <element signature="e#0#10#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/qsim/logging.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="368">
+              <caret line="37" column="8" selection-start-line="37" selection-start-column="8" selection-end-line="37" selection-end-column="39" />
+              <folding>
+                <element signature="e#0#15#0" expanded="true" />
               </folding>
             </state>
           </provider>
@@ -49,8 +61,8 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/qsim/task_manager.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="490">
-              <caret line="61" column="52" lean-forward="true" selection-start-line="61" selection-start-column="52" selection-end-line="61" selection-end-column="52" />
+            <state relative-caret-position="566">
+              <caret line="64" column="25" selection-start-line="64" selection-start-column="25" selection-end-line="64" selection-end-column="25" />
               <folding>
                 <element signature="e#0#16#0" expanded="true" />
               </folding>
@@ -62,7 +74,7 @@
         <entry file="file://$PROJECT_DIR$/qsim/task.py">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="800">
-              <caret line="130" column="50" lean-forward="true" selection-start-line="130" selection-start-column="50" selection-end-line="130" selection-end-column="56" />
+              <caret line="130" column="50" selection-start-line="130" selection-start-column="50" selection-end-line="130" selection-end-column="56" />
               <folding>
                 <element signature="e#0#40#0" expanded="true" />
               </folding>
@@ -71,13 +83,40 @@
         </entry>
       </file>
       <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/qsim/statistical_logger.py">
+        <entry file="file://$PROJECT_DIR$/sct/sct_api_interface.robot">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="527">
-              <caret line="31" column="38" selection-start-line="31" selection-start-column="22" selection-end-line="31" selection-end-column="38" />
+            <state relative-caret-position="-448">
+              <caret line="31" lean-forward="true" selection-start-line="31" selection-end-line="31" />
               <folding>
-                <element signature="e#0#16#0" expanded="true" />
+                <element signature="e#0#188#0" expanded="true" />
               </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/qsim/scripts/10000002">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="289">
+              <caret line="17" column="20" selection-start-line="17" selection-start-column="20" selection-end-line="17" selection-end-column="20" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/sct/data/start_task_json">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="85">
+              <caret line="5" column="1" selection-start-line="5" selection-start-column="1" selection-end-line="5" selection-end-column="1" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/sct/data/resp_id_json">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="34">
+              <caret line="2" column="1" lean-forward="true" selection-start-line="2" selection-start-column="1" selection-end-line="2" selection-end-column="1" />
             </state>
           </provider>
         </entry>
@@ -86,8 +125,6 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>EXCEPTION</find>
-      <find>__process_send_command</find>
       <find>STOP_COLLECT</find>
       <find>get_script_id</find>
       <find>statistical_logger</find>
@@ -116,6 +153,8 @@
       <find>cond</find>
       <find>notify</find>
       <find>wait</find>
+      <find>self.__handler</find>
+      <find>Impossible to communicate correctly with TAS using HTTP</find>
     </findStrings>
     <dirStrings>
       <dir>D:\workspace\sandbox\App\qsim</dir>
@@ -145,7 +184,6 @@
         <option value="$PROJECT_DIR$/qsim/expression_analyser.py" />
         <option value="$PROJECT_DIR$/qsim/__main__.py" />
         <option value="$PROJECT_DIR$/qsim/statistical_logger.py" />
-        <option value="$PROJECT_DIR$/qsim/http_client.py" />
         <option value="$PROJECT_DIR$/qsim/scripts/scenario_example" />
         <option value="$PROJECT_DIR$/qsim/logging.py" />
         <option value="$PROJECT_DIR$/qsim/http_parser.py" />
@@ -157,15 +195,18 @@
         <option value="$PROJECT_DIR$/qsim/task_manager.py" />
         <option value="$PROJECT_DIR$/qsim/scripts/10000001" />
         <option value="$PROJECT_DIR$/qsim/json_builder.py" />
-        <option value="$PROJECT_DIR$/qsim/http_handler.py" />
         <option value="$PROJECT_DIR$/qsim/messages.py" />
         <option value="$PROJECT_DIR$/qsim/task.py" />
         <option value="$PROJECT_DIR$/qsim/task_context.py" />
+        <option value="$PROJECT_DIR$/qsim/scripts/10000002" />
+        <option value="$PROJECT_DIR$/sct/data/resp_id_json" />
         <option value="$PROJECT_DIR$/sct/sct_api_interface.robot" />
+        <option value="$PROJECT_DIR$/qsim/http_handler.py" />
+        <option value="$PROJECT_DIR$/qsim/http_client.py" />
       </list>
     </option>
   </component>
-  <component name="ProjectFrameBounds" extendedState="7">
+  <component name="ProjectFrameBounds" extendedState="6">
     <option name="x" value="205" />
     <option name="y" value="338" />
     <option name="width" value="1400" />
@@ -189,6 +230,12 @@
               <item name="qsim" type="462c0819:PsiDirectoryNode" />
               <item name="qsim" type="462c0819:PsiDirectoryNode" />
             </path>
+            <path>
+              <item name="qsim" type="b2602c69:ProjectViewProjectNode" />
+              <item name="qsim" type="462c0819:PsiDirectoryNode" />
+              <item name="qsim" type="462c0819:PsiDirectoryNode" />
+              <item name="scripts" type="462c0819:PsiDirectoryNode" />
+            </path>
           </expand>
           <select />
         </subPane>
@@ -199,6 +246,11 @@
   <component name="PropertiesComponent">
     <property name="last_opened_file_path" value="C:/Program Files/Cygwin64/lib/python3.6" />
     <property name="settings.editor.selected.configurable" value="com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable" />
+  </component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="D:\workspace\sandbox\App\qsim\qsim\scripts" />
+    </key>
   </component>
   <component name="RunDashboard">
     <option name="ruleStates">
@@ -355,16 +407,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/qsim/logging.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="240">
-          <caret line="39" column="32" selection-start-line="39" selection-start-column="32" selection-end-line="39" selection-end-column="32" />
-          <folding>
-            <element signature="e#0#15#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://D:/Miniconda3/envs/test-environment/Lib/socketserver.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="223">
@@ -387,24 +429,10 @@
     <entry file="file://$PROJECT_DIR$/qsim/log_qsim.log">
       <provider selected="true" editor-type-id="text-editor" />
     </entry>
-    <entry file="file://$PROJECT_DIR$/qsim/configuration.ini">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="187">
-          <caret line="11" column="9" selection-start-line="11" selection-start-column="9" selection-end-line="11" selection-end-column="9" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/sct/__init__.py" />
     <entry file="file://$PROJECT_DIR$/sct/signalling.py" />
     <entry file="file://$PROJECT_DIR$/qsim/__init__.py">
       <provider selected="true" editor-type-id="text-editor" />
-    </entry>
-    <entry file="file://$PROJECT_DIR$/qsim/scripts/10000001">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="17">
-          <caret line="1" column="17" lean-forward="true" selection-start-line="1" selection-start-column="17" selection-end-line="1" selection-end-column="17" />
-        </state>
-      </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/qsim/configuration.py">
       <provider selected="true" editor-type-id="text-editor">
@@ -416,27 +444,10 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/qsim/scripts/100001">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="255">
-          <caret line="15" selection-start-line="15" selection-end-line="16" selection-end-column="17" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$USER_HOME$/.PyCharmCE2018.3/system/python_stubs/1627689305/builtins.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="203">
           <caret line="3528" column="8" selection-start-line="3528" selection-start-column="8" selection-end-line="3528" selection-end-column="8" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/qsim/http_client.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="357">
-          <caret line="21" column="59" selection-start-line="21" selection-start-column="59" selection-end-line="21" selection-end-column="59" />
-          <folding>
-            <element signature="e#0#18#0" expanded="true" />
-          </folding>
         </state>
       </provider>
     </entry>
@@ -464,30 +475,10 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/sct/sct_api_interface.robot">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="289">
-          <caret line="17" column="16" lean-forward="true" selection-start-line="17" selection-start-column="16" selection-end-line="17" selection-end-column="16" />
-          <folding>
-            <element signature="e#0#168#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/qsim/__main__.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="459">
           <caret line="27" selection-start-line="27" selection-end-line="27" />
-          <folding>
-            <element signature="e#0#10#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/qsim/code_block.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="838">
-          <caret line="178" column="19" selection-start-line="178" selection-start-column="19" selection-end-line="178" selection-end-column="19" />
           <folding>
             <element signature="e#0#10#0" expanded="true" />
           </folding>
@@ -501,9 +492,40 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/qsim/http_server.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="306">
+          <caret line="18" column="37" selection-start-line="18" selection-start-column="37" selection-end-line="18" selection-end-column="37" />
+          <folding>
+            <element signature="e#0#34#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/qsim/scripts/10000001">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="17">
+          <caret line="1" column="17" lean-forward="true" selection-start-line="1" selection-start-column="17" selection-end-line="1" selection-end-column="17" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/qsim/scripts/100001">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="187">
+          <caret line="11" column="13" selection-start-line="11" selection-start-column="5" selection-end-line="11" selection-end-column="13" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/qsim/configuration.ini">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="187">
+          <caret line="11" column="9" selection-start-line="11" selection-start-column="9" selection-end-line="11" selection-end-column="9" />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/qsim/task_context.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="2703">
+        <state relative-caret-position="838">
           <caret line="159" column="26" selection-start-line="159" selection-start-column="8" selection-end-line="159" selection-end-column="26" />
           <folding>
             <element signature="e#0#44#0" expanded="true" />
@@ -521,42 +543,93 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/qsim/task_manager.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="490">
-          <caret line="61" column="52" lean-forward="true" selection-start-line="61" selection-start-column="52" selection-end-line="61" selection-end-column="52" />
-          <folding>
-            <element signature="e#0#16#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/qsim/task.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="800">
-          <caret line="130" column="50" lean-forward="true" selection-start-line="130" selection-start-column="50" selection-end-line="130" selection-end-column="56" />
+          <caret line="130" column="50" selection-start-line="130" selection-start-column="50" selection-end-line="130" selection-end-column="56" />
           <folding>
             <element signature="e#0#40#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/qsim/task_manager.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="566">
+          <caret line="64" column="25" selection-start-line="64" selection-start-column="25" selection-end-line="64" selection-end-column="25" />
+          <folding>
+            <element signature="e#0#16#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/qsim/code_block.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="532">
+          <caret line="148" column="23" selection-start-line="148" selection-start-column="23" selection-end-line="148" selection-end-column="23" />
+          <folding>
+            <element signature="e#0#10#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/qsim/logging.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="368">
+          <caret line="37" column="8" selection-start-line="37" selection-start-column="8" selection-end-line="37" selection-end-column="39" />
+          <folding>
+            <element signature="e#0#15#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/qsim/scripts/10000002">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="289">
+          <caret line="17" column="20" selection-start-line="17" selection-start-column="20" selection-end-line="17" selection-end-column="20" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/sct/data/start_task_json">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="85">
+          <caret line="5" column="1" selection-start-line="5" selection-start-column="1" selection-end-line="5" selection-end-column="1" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/sct/data/resp_id_json">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="34">
+          <caret line="2" column="1" lean-forward="true" selection-start-line="2" selection-start-column="1" selection-end-line="2" selection-end-column="1" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/sct/sct_api_interface.robot">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-448">
+          <caret line="31" lean-forward="true" selection-start-line="31" selection-end-line="31" />
+          <folding>
+            <element signature="e#0#188#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/qsim/http_handler.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="481">
-          <caret line="192" column="8" lean-forward="true" selection-start-line="192" selection-start-column="8" selection-end-line="192" selection-end-column="8" />
+        <state relative-caret-position="617">
+          <caret line="107" column="56" lean-forward="true" selection-start-line="107" selection-start-column="56" selection-end-line="107" selection-end-column="56" />
           <folding>
             <element signature="e#0#48#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/qsim/http_server.py">
+    <entry file="file://$PROJECT_DIR$/qsim/http_client.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="578">
-          <caret line="34" selection-start-line="34" selection-end-line="40" selection-end-column="36" />
+        <state relative-caret-position="674">
+          <caret line="42" column="33" selection-start-line="42" selection-start-column="33" selection-end-line="42" selection-end-column="33" />
           <folding>
-            <element signature="e#0#34#0" expanded="true" />
+            <element signature="e#0#18#0" expanded="true" />
           </folding>
         </state>
       </provider>
