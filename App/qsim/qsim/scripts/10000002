@@ -1,5 +1,7 @@
-@@@ SEND PLAY
+@@@ ASSIGN SESSION_ID 200001
+@@@ ASSIGN PARTY_ID 300001
 
+@@@ SEND PLAY
 ### JSON body of the play request to TAS.
 {
     "mediaUrls":
@@ -9,13 +11,9 @@
     ],
     "interruptible":    true,
     "repeat":           true,
-    "onPlayed":         "/telephony/v1/account/$(accountId)/services/queue/$(taskId)/voice/tasks/$(sessionId)/actions/plays/{playId}",
-    "onFailure":        "/telephony/v1/account/$(accountId)/services/queue/$(taskId)/voice/tasks/$(sessionId)/actions/plays/{playId}"
+    "onPlayed":         "/telephony/v1/account/$(accountId)/services/queue/$(taskId)/voice/tasks/$(sessionId)/actions/plays",
+    "onFailure":        "/telephony/v1/account/$(accountId)/services/queue/$(taskId)/voice/tasks/$(sessionId)/actions/plays"
 }
-
-### Just sleep 1000 ms.
-@@@ TIMEOUT 50000
 
 ### Wait when TAS sends play result http using callback command.
 @@@ WAIT RESULT_PLAY
-
