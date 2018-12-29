@@ -24,10 +24,24 @@ Start Play Scenario
 
     ${task id}=        Start Task       ${scenario id}
     ${callback url}=   Wait For Play Request
-    Reply Success To Play Request
+    Reply Success To Play Request    20000001
 
-    Send Play Complete Response   ${callback url}
+    Send Play Complete Response         ${callback url}
 
+
+Start Play Scenario with Stop Play
+    ${scenario id}=   Set Variable   10000003
+
+    ${task id}=        Start Task       ${scenario id}
+    ${callback url}=   Wait For Play Request
+
+    ${play id}=   Set Variable   20000002
+    Reply Success To Play Request   ${play id}
+
+    Wait For Stop Play Request          ${play id}
+    Reply By   204
+
+    Send Play Complete Response         ${callback url}
 
 
 *** Keywords ***
@@ -80,12 +94,28 @@ Wait For Play Request
     ${method}=    Get Request Method
     ${body}=      Get Request Body
 
+    Should Be Equal   ${method}   POST
+
     ${url}=    Get Json Value   ${body}   onPlayed
     [Return]   ${url}
 
 
+Wait For Stop Play Request
+    [Arguments]   ${play id}
+    Wait For Request
+    ${method}=   Get Request Method
+
+    Should Be Equal   ${method}   DELETE
+
+    ${url}=   Get Request URL
+    ${match}   ${group1}=   Should Match Regexp   ${url}   .*/play/(\\S+)
+    Should Be Equal   ${group1}   ${play id}
+
+
 Reply Success To Play Request
+    [Arguments]   ${play id}
     ${body}=   Get File   data/resp_id_json
+    ${body}=   Set Json Value   ${body}   id   ${play id}
     Set Reply Header      Content-Type   application/json-rpc
     Reply By   200   ${body}
 
@@ -95,7 +125,7 @@ Send Play Complete Response
     Send HTTP Request   POST   ${callback url}
 
     ${response status}=   Get Response Status
-    ${expected status}=   Convert To Integer   201
+    ${expected status}=   Convert To Integer   200
     Should Be Equal   ${response status}   ${expected status}
 
 

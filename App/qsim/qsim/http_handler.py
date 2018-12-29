@@ -96,7 +96,7 @@ class http_handler(SimpleHTTPRequestHandler):
 
             tas_request["tas_address"] = {"ip": tas_host, "port": tas_port}
             tas_request["account_id"] = request[struct_field.account_id]
-            
+
             task_id = self.__get_session_manager().create(request[struct_field.script_id], tas_request)
             if task_id is None:
                 self.__send_response(http_code.HTTP_NOT_FOUND, "\"Session '" + str(task_id) + "' is not found.\"")
@@ -116,24 +116,26 @@ class http_handler(SimpleHTTPRequestHandler):
                 self.__send_response(configuration.get_failure_action_result_code(), None, configuration.get_failure_action_result_message())
                 return
             
-            session_id  = request[struct_field.session_id]
-            message_id  = request[struct_field.id]
+            session_id = request[struct_field.session_id]
+            message_id = request[struct_field.id]
             # script_id   = request[struct_field.script_id];
+
+            message_size = int(self.headers['Content-Length'])
+            json_result = self.rfile.read(message_size)
             
-            json_result = self.rfile.read(int(self.headers['Content-Length']))
-            
-            logging.info("Callback action result is received (id: '%d').", request[struct_field.id])
+            logging.info("Callback action result is received (id: '%s').", message_id)
             logging.debug("Content of the callback result:\n%s", json_result)
             
             # it is represented by map because most probably other staff may be conveyed to session.
             json_instance = None
-            try:    
-                json_instance = json.loads(json_result)
-                
-            except: 
-                logging.error("Impossible to parse JSON - corrupted JSON payload is received.")
-                self.__send_response(http_code.HTTP_BAD_REQUEST, "\"Corrupted JSON payload in POST request.\"")
-                return
+            if message_size > 0:
+                try:
+                    json_instance = json.loads(json_result)
+
+                except:
+                    logging.error("Impossible to parse JSON - corrupted JSON payload is received.")
+                    self.__send_response(http_code.HTTP_BAD_REQUEST, "\"Corrupted JSON payload in POST request.\"")
+                    return
             
             message_playload = {'json' : json_instance}
             

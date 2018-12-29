@@ -17,14 +17,14 @@ class http_parser:
     @staticmethod
     def parse(method, path):
         if method == http_method.HTTP_POST:
-            reg_object = re.match("/telephony/v1/account/(\d+)/services/queue/(\d+)/voice/tasks", path)
+            reg_object = re.match("/telephony/v1/account/(\d+)/services/queue/(\d+)/voice/tasks$", path)
             if (reg_object):
                 return http_parser.extract_qsim_start_request(reg_object)
-            
+
             reg_object = re.match("/telephony/v1/account/(\d+)/services/queue/(\d+)/voice/tasks/(\d+)/actions/(.*)", path)
             if (reg_object):
                 return http_parser.extract_tas_action_result(reg_object)
-        
+
         elif method == http_method.HTTP_DELETE:
             reg_object = re.match("/telephony/v1/account/(\d+)/services/queue/(\d+)/voice/tasks/(\d+)", path)
             if reg_object:
@@ -77,15 +77,14 @@ class http_parser:
     @staticmethod
     def extract_tas_action_result(reg_object):
         action_line = reg_object.group(4)
-        action_reg_object = re.match("(\S+)/(\d+)", action_line)
+        action_reg_object = re.match("(\S+)", action_line)
         if action_reg_object:
             action = action_reg_object.group(1)
-            message_id = None
-            
-            if action == "play":
+
+            if action == "plays":
                 message_id = tas_command_type.RESULT_PLAY
             
-            elif action == "collect":
+            elif action == "collects":
                 message_id = tas_command_type.RESULT_COLLECT
             
             else:
@@ -96,7 +95,7 @@ class http_parser:
                     struct_field.account_id:   reg_object.group(1),
                     struct_field.script_id:    reg_object.group(2),
                     struct_field.session_id:   reg_object.group(3),
-                    struct_field.action_id:    action_reg_object.group(2)}
+                    struct_field.action_id:    0}
         else:
             logging.error("Unknown result action format from TAS is detected '%s'.", action_line)
             return None

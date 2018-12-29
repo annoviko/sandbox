@@ -96,7 +96,13 @@ class task(object):
             
             elif command == command_type.COMMAND_WAIT:
                 self.__process_wait_command(arguments[0])
-            
+
+            elif command == command_type.COMMAND_ASK:
+                self.__process_ask_command(arguments[0])
+
+            elif command == command_type.COMMAND_ASSIGN:
+                self.__process_assign_command(arguments[0], arguments[1])
+
             elif command == command_type.COMMAND_PRINT:
                 self.__process_print_comand(arguments[0])
             
@@ -142,6 +148,29 @@ class task(object):
                 break
 
 
+    def __process_ask_command(self, variable_name):
+        logging.vip("(QSim Service task '%s') command to ask user value of variable: '%s'.", self.__context.get_id(), variable_name)
+
+        variable_value = input("Please enter value for variable '%s': " % variable_name)
+        self.__assign_variable_value(variable_name, variable_value)
+
+
+    def __process_assign_command(self, variable_name, variable_value):
+        logging.vip("(QSim Service task '%s') command to assign value '%s' to variable: '%s'.", self.__context.get_id(), variable_value, variable_name)
+        self.__assign_variable_value(variable_name, variable_value)
+
+
+    def __assign_variable_value(self, variable_name, variable_value):
+        if variable_name not in {"SESSION_ID", "PARTY_ID"}:
+            logging.error("(QSim Service task '%s') Variable '%s' is not supported.", self.__context.get_id(), variable_name)
+            return
+
+        if variable_name == "SESSION_ID":
+            self.__context.set_session_id(variable_value)
+        elif variable_name == "PARTY_ID":
+            self.__context.set_party_id(variable_value)
+
+
     def __process_timeout_command(self, timeout):
         logging.debug("(QSim Service task '%s') command TIMEOUT is executing (time: '%d')...", self.__context.get_id(), timeout)
         time.sleep(timeout / 1000.0)
@@ -151,38 +180,35 @@ class task(object):
         logging.user(text)
 
 
-    def __process_send_command(self, method, tas_content, arguments):
+    def __process_send_command(self, action, tas_content, arguments):
         logging.debug("(QSim Service task '%s') command SEND is executing...", self.__context.get_id())
-
-        tas_link = None
-        tas_method = None
         
-        if method == "PLAY":
-            tas_link = self.__context.get_tas_link_play()
+        if action == "PLAY":
+            tas_link = self.__context.get_tas_link_start_play()
             tas_method = "POST"
         
-        elif method == "STOP_PLAY":
+        elif action == "STOP_PLAY":
             tas_link = self.__context.get_tas_link_stop_play()
             tas_method = "DELETE"
         
-        elif method == "COLLECT":
-            tas_link = self.__context.get_tas_link_collect()
+        elif action == "COLLECT":
+            tas_link = self.__context.get_tas_link_start_collect()
             tas_method = "POST"
         
-        elif method == "STOP_COLLECT":
+        elif action == "STOP_COLLECT":
             tas_link = self.__context.get_tas_link_stop_collect()
             tas_method = "DELETE"
         
-        elif method == "FORWARD":
+        elif action == "FORWARD":
             tas_link = self.__context.get_tas_link_forward()
             tas_method = "PUT"
 
-        elif method == "HUNT":
+        elif action == "HUNT":
             tas_link = self.__context.get_task_link_hunt()
             tas_method = "POST"
 
         else:
-            logging.error("Unknown send command '%s'.", method)
+            logging.error("Unknown send command '%s'.", action)
             return
 
         if len(arguments) > 0:
@@ -191,26 +217,26 @@ class task(object):
         
         tas_content = self.__translate_content(tas_content)
         
-        logging.info("(QSim Service task '%s') send command request to TAS ('%s', '%s').", self.__context.get_id(), tas_method, method)
+        logging.info("(QSim Service task '%s') send command request to TAS ('%s', '%s').", self.__context.get_id(), tas_method, action)
         (status, json_response) = self.__send(tas_method, tas_link, tas_content)
         if (status >= 200) and (status <= 299):
             if tas_method == "POST":
                 response = json.loads(json_response)
                 if response.get("id", None) is None:
-                    logging.error("(QSim Service task '%s') TAS reply to '%s' command '%s' without JSON body with 'id' key.", self.__context.get_id(), tas_method, method)
+                    logging.error("(QSim Service task '%s') TAS reply to '%s' command '%s' without JSON body with 'id' key.", self.__context.get_id(), tas_method, action)
                 
                 else:
                     action_id = response['id']
 
-                    if method == "PLAY":
+                    if action == "PLAY":
                         self.__context.set_play_id(action_id)
-                    elif method == "COLLECT":
+                    elif action == "COLLECT":
                         self.__context.set_collect_id(action_id)
                     
-                    logging.info("(QSim Service task '%s') TAS accepts '%s' command '%s' and return action id: '%s'.", self.__context.get_id(), tas_method, method, action_id)
+                    logging.info("(QSim Service task '%s') TAS accepts '%s' command '%s' and return action id: '%s'.", self.__context.get_id(), tas_method, action, action_id)
         
         else:
-            logging.warning("(QSim Service task '%s') TAS reply to '%s' command '%s' by failure status (code: '%d').", self.__context.get_id(), tas_method, method, status)
+            logging.warning("(QSim Service task '%s') TAS reply to '%s' command '%s' by failure status (code: '%d').", self.__context.get_id(), tas_method, action, status)
 
 
     def __process_move_json(self, name):

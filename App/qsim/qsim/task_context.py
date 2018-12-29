@@ -43,6 +43,14 @@ class task_context:
         self.__last_input_message = message
 
 
+    def set_session_id(self, value):
+        self.__tas_info["session_id"] = value
+
+
+    def set_party_id(self, value):
+        self.__tas_info["party_id"] = value
+
+
     def get_last_input_message(self):
         return self.__last_input_message
 
@@ -125,16 +133,12 @@ class task_context:
         return configuration.get_tas_port()
 
 
-    def get_tas_link_play(self):
-        return ""
-
-
     def get_tas_link_session(self):
-        return "%s:%s/telephony/v1/account/%s/sessions/%s" % (self.get_tas_address(), str(self.get_tas_port()), self.__tas_info["accountId"], self.__tas_info["sessionId"])
+        return "%s:%s/telephony/v1/account/%s/sessions/%s" % (self.get_tas_address(), str(self.get_tas_port()), self.__tas_info["account_id"], self.__tas_info["session_id"])
 
 
     def get_tas_link_party(self):
-        return "%s/parties/%s" % (self.get_tas_link_session(), self.__tas_info["partyId"])
+        return "%s/parties/%s" % (self.get_tas_link_session(), self.__tas_info["party_id"])
 
 
     def get_tas_link_start_play(self):
@@ -145,7 +149,7 @@ class task_context:
         return "%s/play/%s" % (self.get_tas_link_party(), str(self.get_play_id()))
 
 
-    def get_tas_link_collect(self):
+    def get_tas_link_start_collect(self):
         return "%s/collect" % (self.get_tas_link_party())
 
 

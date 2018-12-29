@@ -19,6 +19,8 @@ class command_type:
     COMMAND_END_IF = "END_IF"
     COMMAND_MOVE_JSON = "MOVE_JSON"
     COMMAND_PRINT = "PRINT"
+    COMMAND_ASK = "ASK"
+    COMMAND_ASSIGN = "ASSIGN"
 
 
 class code_block_type:
@@ -117,7 +119,13 @@ class code_block:
         
         elif command == command_type.COMMAND_WAIT:
             self.__process_command_wait(command, argument)
-        
+
+        elif command == command_type.COMMAND_ASK:
+            self.__process_command_ask(command, argument)
+
+        elif command == command_type.COMMAND_ASSIGN:
+            self.__process_command_assign(command, argument)
+
         elif command == command_type.COMMAND_EXIT:
             self.__process_command_exit(command)
         
@@ -166,6 +174,17 @@ class code_block:
 
     def __process_command_wait(self, command, argument):
         self.__command_sequence.append((command, [argument]))
+        return True
+
+
+    def __process_command_ask(self, command, argument):
+        self.__command_sequence.append((command, [argument]))
+        return True
+
+
+    def __process_command_assign(self, command, argument):
+        command_line_arguments = argument.split()
+        self.__command_sequence.append((command, [command_line_arguments[0], command_line_arguments[1]]))
         return True
 
 
