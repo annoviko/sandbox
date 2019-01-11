@@ -6,7 +6,7 @@ import time
 from qsim.configuration import configuration
 from qsim.logging import logging
 from qsim.http_definition import http_method, http_code
-from qsim.http_parser import http_parser, struct_field
+from qsim.http_parser import http_parser, parser_failure, struct_field
 from qsim.json_builder import json_builder
 from qsim.messages import tas_command_type
 from qsim.task_manager import task_manager
@@ -27,14 +27,21 @@ class http_handler(SimpleHTTPRequestHandler):
         return task_manager
 
 
+    def __parser_failure_to_http_code(self, failure):
+        if failure.UNKNOWN_PATH: return http_code.HTTP_NOT_FOUND
+        elif failure.INCORRECT_BODY: return http_code.HTTP_BAD_REQUEST
+        elif failure.UNKNOWN_METHOD: return http_code.HTTP_METHOD_NOT_SUPPORTED
+        else: return http_code.HTTP_BAD_REQUEST
+
+
     def do_GET(self):
         tas_host, tas_port = self.client_address[:2]
         
         logging.info("Receive HTTP GET request from TAS: '%s' (address: '%s:%s').", self.path, tas_host, tas_port)
         request = http_parser.parse(http_method.HTTP_GET, self.path)
         
-        if request is None:
-            self.__send_response(http_code.HTTP_BAD_REQUEST, "\"Impossible to parse GET request.\"")
+        if isinstance(request, parser_failure):
+            self.__send_response(self.__parser_failure_to_http_code(request), "\"Impossible to process GET request.\"")
             return
         
         #
@@ -76,8 +83,8 @@ class http_handler(SimpleHTTPRequestHandler):
         logging.info("Receive HTTP POST request from TAS: '%s' (address: '%s:%s').", self.path, tas_host, tas_port)
         request = http_parser.parse(http_method.HTTP_POST, self.path)
         
-        if request is None:
-            self.__send_response(http_code.HTTP_BAD_REQUEST, "\"Impossible to parse POST request.\"")
+        if isinstance(request, parser_failure):
+            self.__send_response(self.__parser_failure_to_http_code(request), "\"Impossible to process POST request.\"")
             return
 
         #
@@ -164,8 +171,8 @@ class http_handler(SimpleHTTPRequestHandler):
         logging.info("Receive HTTP DELETE request from TAS: '%s' (address: '%s:%s').", self.path, tas_host, tas_port)
         request = http_parser.parse(http_method.HTTP_DELETE, self.path)
         
-        if request is None:
-            self.__send_response(http_code.HTTP_BAD_REQUEST, "\"Impossible to parse DELETE request.\"")
+        if isinstance(request, parser_failure):
+            self.__send_response(self.__parser_failure_to_http_code(request), "\"Impossible to process DELETE request.\"")
             return
         
         #

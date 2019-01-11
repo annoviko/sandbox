@@ -1,5 +1,7 @@
 import re
 
+from enum import IntEnum
+
 from qsim.http_definition import http_method
 from qsim.logging import logging
 from qsim.messages import tas_command_type
@@ -11,6 +13,12 @@ class struct_field:
     script_id = "script_id"
     session_id = "session_id"
     action_id = "action_id"
+
+
+class parser_failure(IntEnum):
+    UNKNOWN_PATH = 1
+    INCORRECT_BODY = 2
+    UNKNOWN_METHOD = 3
 
 
 class http_parser:
@@ -41,8 +49,9 @@ class http_parser:
         
         else:
             logging.error("HTTP method '%s' is not supported.", method)
-        
-        return None
+            return parser_failure.UNKNOWN_METHOD
+
+        return parser_failure.UNKNOWN_PATH
 
 
     @staticmethod
@@ -89,7 +98,7 @@ class http_parser:
             
             else:
                 logging.error("Unknown result action from TAS is detected '%s'.", action)
-                return None
+                return parser_failure.UNKNOWN_PATH
             
             return {struct_field.id:           message_id,
                     struct_field.account_id:   reg_object.group(1),
@@ -98,4 +107,4 @@ class http_parser:
                     struct_field.action_id:    0}
         else:
             logging.error("Unknown result action format from TAS is detected '%s'.", action_line)
-            return None
+            return parser_failure.INCORRECT_BODY

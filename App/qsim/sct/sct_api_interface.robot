@@ -10,6 +10,7 @@ Test Setup      Start HTTP Client and Server
 Test Teardown   Stop Server
 
 
+
 *** Test Cases ***
 
 Start and Stop Task Without Scenario
@@ -42,6 +43,31 @@ Start Play Scenario with Stop Play
     Reply By   204
 
     Send Play Complete Response         ${callback url}
+
+
+Start Task with Wrong URL
+    ${request body}=   Get File   data/start_task_json
+    ${url}=            Set Variable   /account/400130275008/services/queue/10000001/voice/tasks
+
+    Set Request Header    Content-Type   application/json-rpc
+    Send HTTP Request     POST   ${url}   ${request body}
+
+    ${response status}=   Get Response Status
+    ${expected status}=   Convert To Integer   404
+    Should Be Equal   ${response status}   ${expected status}
+
+
+Start Task with Not Implemented Method
+    ${request body}=   Get File   data/start_task_json
+    ${url}=            Get Start Task URL   10000001
+
+    Set Request Header    Content-Type   application/json-rpc
+    Send HTTP Request     PUT   ${url}   ${request body}
+
+    ${response status}=   Get Response Status
+    ${expected status}=   Convert To Integer   501
+    Should Be Equal   ${response status}   ${expected status}
+
 
 
 *** Keywords ***
