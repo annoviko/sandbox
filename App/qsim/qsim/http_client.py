@@ -10,7 +10,7 @@ class http_client:
         self.__port = port
 
 
-    def send_request(self, http_method, http_link, json_request):
+    def send_request(self, http_method, http_link, json_request, general_headers):
         response_body = None
 
         connection = http.client.HTTPConnection(self.__address, self.__port, timeout=1)
@@ -18,14 +18,16 @@ class http_client:
         try:
             logging.debug("Send HTTP request to TAS (%s:%s): '%s' '%s'.", self.__address, self.__port, http_method, http_link)
             logging.debug("JSON payload of the HTTP request to TAS: '%s'.", json_request)
-            
-            headers = {'Content-Type': 'application/json' }
+
+            headers = {'Content-Type': 'application/json'}
             
             body = None
             if json_request is not None:
                 body = json_request.encode("utf-8")
                 headers['Content-Length'] = len(body)
-            
+
+            headers.update(general_headers)
+
             statistical.inc_qsim_requests()
             connection.request(http_method, http_link, body, headers)
             

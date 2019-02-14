@@ -1,2 +1,4 @@
-### Just sleep 1000 ms.
+@@@ WAIT TASK_START
+@@@ REPLY 201
+
 @@@ TIMEOUT 50000

@@ -1,16 +1,14 @@
 import threading
 
 from qsim.logging import logging
+from qsim.messages import tas_command_type
 from qsim.task import task
 
 
 class task_manager:
     __tasks = {}
+    __script_mapping = {}
     __resource_locker = threading.RLock()
-
-
-    def __init__(self):
-        assert 0
 
 
     @staticmethod
@@ -19,18 +17,31 @@ class task_manager:
 
 
     @staticmethod
-    def create(script_id, tas_request):
+    def create(queue_id, tas_request):
         with task_manager.__resource_locker:
-            logging.vip("Create new session instance (script id: '%s', amount tasks: '%d').", script_id, len(task_manager.__tasks))
-            session_instance = task(script_id, tas_request, task_manager)
-            if session_instance is None:
-                return None
+            if queue_id in task_manager.__script_mapping:
+                logging.debug("Notify about start message (queue id: '%s', amount tasks: '%d').", queue_id, len(task_manager.__tasks))
 
-            task_id = session_instance.get_id()
+                task_id = task_manager.__script_mapping[queue_id]
+                task_manager.__tasks[task_id].notify(tas_command_type.TASK_START)
 
-            task_manager.__tasks[task_id] = session_instance
-        
-        return task_id
+            else:
+                session_instance = task(queue_id, tas_request, task_manager)
+                if session_instance is None:
+                    return False
+
+                task_id = session_instance.get_id()
+
+                task_manager.__script_mapping[queue_id] = task_id
+                task_manager.__tasks[task_id] = session_instance
+
+                session_instance.start()
+
+                logging.vip("Create new session instance (queue id: '%s', task id: '%s' amount tasks: '%d').", queue_id, task_id, len(task_manager.__tasks))
+
+                session_instance.notify(tas_command_type.TASK_START)
+
+        return True
 
 
     @staticmethod
@@ -54,11 +65,14 @@ class task_manager:
     @staticmethod
     def delete(session_id, internal=False):
         reply_code = None
+
         with task_manager.__resource_locker:
-            if internal is False:
-                reply_code = task_manager.__tasks[session_id].stop()
-            
             if task_manager.exist(session_id):
+                if internal is False:  # is already stopped by itself
+                    reply_code = task_manager.__tasks[session_id].stop()
+
+                queue_id = task_manager.__tasks[session_id].get_queue_id()
+                task_manager.__script_mapping.pop(queue_id)
                 task_manager.__tasks.pop(session_id)
                 logging.debug("Delete session instance (task id: '%s', sessions '%d').", session_id, len(task_manager.__tasks))
 

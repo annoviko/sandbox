@@ -50,6 +50,11 @@ class task_context:
     def set_party_id(self, value):
         self.__tas_info["party_id"] = value
 
+    def set_rcaccount_id(self, value):
+        self.__tas_info["rcaccount_id"] = value
+
+    def set_rcextension_id(self, value):
+        self.__tas_info["rcextension_id"] = value
 
     def get_last_input_message(self):
         return self.__last_input_message
@@ -121,9 +126,14 @@ class task_context:
         return self.__tas_info["account_id"]
 
 
-    def get_task_id(self):
+    def get_queue_id(self):
         return self.__script_id
 
+    def get_rcaccount_id(self):
+        return self.__tas_info.get("rcaccount_id")
+
+    def get_rcextension_id(self):
+        return self.__tas_info.get("rcextension_id")
 
     def get_tas_address(self):
         return self.__tas_info["tas_address"]["ip"]

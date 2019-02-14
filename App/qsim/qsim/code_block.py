@@ -9,6 +9,8 @@ class command_type:
     COMMAND_SEND = "SEND"
     COMMAND_TIMEOUT = "TIMEOUT"
     COMMAND_WAIT = "WAIT"
+    COMMAND_REPLY = "REPLY"
+    COMMAND_IGNORE = "IGNORE"
     COMMAND_EXIT = "EXIT"
     COMMAND_TRIGGER = "TRIGGER"
     COMMAND_END_TRIGGER = "END_TRIGGER"
@@ -45,7 +47,9 @@ class code_block:
         self.__content_flag = False
         self.__command_sequence = []
         self.__command_content = ""
-    
+
+        self.__command_headers = {}
+
         self.__triggers = {}
         self.__functions = {}
         
@@ -100,16 +104,29 @@ class code_block:
         if self.__content_flag is not True:
             logging.error("Incorrect script-file format in line '%s' (%d).", self.__line_counter, self.__line)
             sys.exit(error_code.ERROR_SCRIPT_INCORRECT_FORMAT)
-        
-        self.__command_content += self.__line
+
+        reg_object = re.match("HEADER (.*) (.*)", self.__line)
+
+        if reg_object:
+            key = reg_object.group(1).rstrip().lstrip()
+            value = reg_object.group(2).rstrip().lstrip()
+
+            self.__command_headers[key] = value
+        else:
+            self.__command_content += self.__line
 
 
     def __process_command(self, command, argument):
         if self.__content_flag is True:
-            self.__command_sequence[len(self.__command_sequence) - 1][1][1] = self.__command_content.lstrip().rstrip()
+            if self.__command_sequence[-1][0] == command_type.COMMAND_REPLY:
+                self.__command_sequence[-1][1][2] = self.__command_content.lstrip().rstrip()
+                self.__command_sequence[-1][1][3] = self.__command_headers
+            else:
+                self.__command_sequence[-1][1][1] = self.__command_content.lstrip().rstrip()
         
         self.__content_flag = False
         self.__command_content = ""
+        self.__command_headers = {}
 
         if command == command_type.COMMAND_SEND:
             self.__process_command_send(command, argument)
@@ -119,6 +136,12 @@ class code_block:
         
         elif command == command_type.COMMAND_WAIT:
             self.__process_command_wait(command, argument)
+
+        elif command == command_type.COMMAND_REPLY:
+            self.__process_command_reply(command, argument)
+
+        elif command == command_type.COMMAND_IGNORE:
+            self.__process_command_ignore(command, argument)
 
         elif command == command_type.COMMAND_ASK:
             self.__process_command_ask(command, argument)
@@ -174,6 +197,25 @@ class code_block:
 
     def __process_command_wait(self, command, argument):
         self.__command_sequence.append((command, [argument]))
+        return True
+
+
+    def __process_command_reply(self, command, argument):
+        self.__content_flag = True
+
+        command_line_arguments = argument.split()
+        code = command_line_arguments[0]
+        message = ""
+        if len(command_line_arguments) > 1:
+            message = command_line_arguments[1]
+
+        self.__command_sequence.append((command, [int(code), message, None, None]))
+
+        return True
+
+
+    def __process_command_ignore(self, command, argument):
+        self.__command_sequence.append((command, None))
         return True
 
 

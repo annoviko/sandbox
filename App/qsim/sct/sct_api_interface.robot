@@ -1,5 +1,6 @@
 *** Settings ***
 
+Library         Collections
 Library         OperatingSystem
 Library         HttpCtrl.Client
 Library         HttpCtrl.Server
@@ -20,29 +21,66 @@ Start and Stop Task Without Scenario
     Stop Task     ${scenario id}   ${task id}
 
 
+Start and Stop Task Continuously
+    ${scenario id}=   Set Variable   10000001
+
+    ${task id}=   Start Task       ${scenario id}
+    Stop Task     ${scenario id}   ${task id}
+
+    ${task id}=   Start Task       ${scenario id}
+    Stop Task     ${scenario id}   ${task id}
+
+
 Start Play Scenario
     ${scenario id}=   Set Variable   10000002
 
-    ${task id}=        Start Task       ${scenario id}
+    ${task id}=        Start Task    ${scenario id}
     ${callback url}=   Wait For Play Request
     Reply Success To Play Request    20000001
 
-    Send Play Complete Response         ${callback url}
+    Send Play Complete Response      ${callback url}
 
 
 Start Play Scenario with Stop Play
     ${scenario id}=   Set Variable   10000003
 
-    ${task id}=        Start Task       ${scenario id}
+    ${task id}=        Start Task    ${scenario id}
     ${callback url}=   Wait For Play Request
 
     ${play id}=   Set Variable   20000002
     Reply Success To Play Request   ${play id}
 
-    Wait For Stop Play Request          ${play id}
+    Wait For Stop Play Request      ${play id}
     Reply By   204
 
-    Send Play Complete Response         ${callback url}
+    Send Play Complete Response     ${callback url}
+
+
+Start Task With Negative and Positive Responses
+    ${scenario id}=   Set Variable   10000004
+
+    ${expected status}=   Convert To Integer   403
+    Start Task With Negative Expectation   ${scenario id}   POST   ${expected status}
+
+    ${expected status}=   Convert To Integer   405
+    Start Task With Negative Expectation   ${scenario id}   POST   ${expected status}
+
+    ${task id}=   Start Task       ${scenario id}
+    Stop Task     ${scenario id}   ${task id}
+
+
+Stop Task With Negative and Positive Responses
+    ${scenario id}=   Set Variable   10000005
+    ${task id}=   Start Task       ${scenario id}
+
+    ${expected status}=   Convert To Integer   404
+    Stop Task     ${scenario id}   ${task id}   ${expected status}
+
+    ${expected status}=   Convert To Integer   409
+    Stop Task     ${scenario id}   ${task id}   ${expected status}
+
+    ${expected status}=   Convert To Integer   204
+    Stop Task     ${scenario id}   ${task id}   ${expected status}
 
 
 Start Task with Wrong URL
@@ -58,15 +96,26 @@ Start Task with Wrong URL
 
 
 Start Task with Not Implemented Method
-    ${request body}=   Get File   data/start_task_json
-    ${url}=            Get Start Task URL   10000001
-
-    Set Request Header    Content-Type   application/json-rpc
-    Send HTTP Request     PUT   ${url}   ${request body}
-
-    ${response status}=   Get Response Status
     ${expected status}=   Convert To Integer   501
-    Should Be Equal   ${response status}   ${expected status}
+    Start Task With Negative Expectation   10000001   PUT   ${expected status}
+
+
+Start Task with Not Existed Scenario
+    ${expected status}=   Convert To Integer   404
+    Start Task With Negative Expectation   10000001_not_existed   POST   ${expected status}
+
+
+Start Task and Check Custom Response Headers
+    ${scenario id}=   Set Variable   10000006
+
+    ${task id}=        Start Task    ${scenario id}
+    ${headers}=        Get Response Headers
+
+    Dictionary Should Contain Item   ${headers}   Location   127.0.0.1
+    Dictionary Should Contain Item   ${headers}   RCKey1     RCValue1
+    Dictionary Should Contain Item   ${headers}   RCKey2     RCValue2
+
+    Stop Task     ${scenario id}   ${task id}
 
 
 
@@ -104,14 +153,27 @@ Start Task
     [Return]   ${task id}
 
 
+Start Task With Negative Expectation
+    [Arguments]   ${scenario id}   ${method}   ${expected status}
+
+    ${request body}=   Get File   data/start_task_json
+    ${url}=            Get Start Task URL   ${scenario id}
+
+    Set Request Header    Content-Type   application/json-rpc
+    Send HTTP Request     ${method}   ${url}   ${request body}
+
+    ${response status}=   Get Response Status
+    Should Be Equal   ${response status}   ${expected status}
+
+
 Stop Task
-    [Arguments]   ${scenario id}   ${task id}
+    [Arguments]   ${scenario id}   ${task id}   ${expected status}=204
     ${url}=   Get Stop Task URL   ${scenario id}   ${task id}
 
     Send HTTP Request   DELETE   ${url}
 
     ${response status}=   Get Response Status
-    ${expected status}=   Convert To Integer   204
+    ${expected status}=   Convert To Integer   ${expected status}
     Should be Equal   ${response status}   ${expected status}
 
 

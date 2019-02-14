@@ -5,6 +5,7 @@ import time
 
 from qsim.configuration import configuration
 from qsim.logging import logging
+from qsim.event_queue import queue, event_start_response, event_response, event_ignore
 from qsim.http_definition import http_method, http_code
 from qsim.http_parser import http_parser, parser_failure, struct_field
 from qsim.json_builder import json_builder
@@ -104,15 +105,34 @@ class http_handler(SimpleHTTPRequestHandler):
             tas_request["tas_address"] = {"ip": tas_host, "port": tas_port}
             tas_request["account_id"] = request[struct_field.account_id]
 
-            task_id = self.__get_session_manager().create(request[struct_field.script_id], tas_request)
-            if task_id is None:
-                self.__send_response(http_code.HTTP_NOT_FOUND, "\"Session '" + str(task_id) + "' is not found.\"")
+            if self.__get_session_manager().create(request[struct_field.script_id], tas_request) is False:
+                message = "Impossible to create session object due to lack of scenario file."
+                logging.error(message)
+                self.__send_response(http_code.HTTP_NOT_FOUND, "\"%s\"" % message)
                 return
-            
-            json_response = json_builder.start_qsim_response(task_id)
-            self.__send_response(http_code.HTTP_OK_CREATED, json_response)
-            
-            self.__get_session_manager().launch(task_id)
+
+            try:
+                response = queue.get(True, 2)
+            except:
+                response = None
+
+            if response is None:
+                message = "Event with response is not received."
+                logging.error(message)
+                self.__send_response(http_code.HTTP_INTERNAL_SERVER_ERROR, "\"%s\"" % message)
+                return
+
+            event_type = type(response)
+            if event_type == event_start_response:
+                self.__send_response(response.code, response.body, response.message, response.headers)
+
+            elif event_type == event_ignore:
+                pass
+
+            else:
+                message = "Unexpected event is received."
+                logging.error(message)
+
         #
         # RESULT_ACTION
         #
@@ -144,9 +164,9 @@ class http_handler(SimpleHTTPRequestHandler):
                     self.__send_response(http_code.HTTP_BAD_REQUEST, "\"Corrupted JSON payload in POST request.\"")
                     return
             
-            message_playload = {'json' : json_instance}
+            message_playload = {'json': json_instance}
             
-            if (self.__get_session_manager().exist(session_id)):
+            if self.__get_session_manager().exist(session_id):
                 reply_code = self.__get_session_manager().notify(session_id, message_id, message_playload)
 
                 if reply_code is None:
@@ -187,20 +207,40 @@ class http_handler(SimpleHTTPRequestHandler):
             return
 
         session_id = request[struct_field.session_id]
-        # script_id   = request[struct_field.script_id];
-        
-        if self.__get_session_manager().exist(session_id) is True:
-            reply_code = self.__get_session_manager().delete(session_id)
-            if reply_code is None:
-                reply_code = http_code.HTTP_OK_NO_CONTENT
 
-            self.__send_response(reply_code)
+        if self.__get_session_manager().exist(session_id) is True:
+            # notify to check whether scenario contains something specific about termination
+            self.__get_session_manager().notify(session_id, tas_command_type.TASK_STOP, None)
+
+            try:
+                response = queue.get(True, 1)
+            except:
+                response = None
+
+            if response is None:    # scenario does not have anything specific about termination
+                reply_code = self.__get_session_manager().delete(session_id)
+                if reply_code is None:
+                    reply_code = http_code.HTTP_OK_NO_CONTENT
+
+                self.__send_response(reply_code)
+
+            else:
+                event_type = type(response)
+                if event_type == event_ignore:
+                    pass
+
+                elif event_type == event_response:
+                    self.__send_response(response.code, response.body, response.message, response.headers)
+
+                else:
+                    message = "Unexpected event is received."
+                    logging.error(message)
         
         else:
             self.__send_response(http_code.HTTP_NOT_FOUND, "\"Session '" + str(session_id) + "' is not found.\"")
 
 
-    def __send_response(self, http_code, json_data=None, http_message=None):
+    def __send_response(self, http_code, json_data=None, http_message=None, headers=None):
         time.sleep(configuration.get_response_delay() / 1000.0)
         
         self.send_response(http_code, http_message)
@@ -210,7 +250,12 @@ class http_handler(SimpleHTTPRequestHandler):
         if json_data is not None:
             body = json_data.encode("utf-8")
             self.send_header('Content-Length', len(body))
-            
+
+
+        if headers is not None:
+            for key, value in headers.items():
+                self.send_header(key, value)
+
         self.end_headers()
         
         if body is not None:

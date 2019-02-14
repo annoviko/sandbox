@@ -1,7 +1,7 @@
 class http_method:
-    HTTP_POST                   = 0x01
-    HTTP_DELETE                 = 0x02
-    HTTP_GET                    = 0x03
+    HTTP_POST = 0x01
+    HTTP_DELETE = 0x02
+    HTTP_GET = 0x03
 
 
 class http_code:

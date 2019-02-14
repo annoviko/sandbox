@@ -1,5 +1,7 @@
 from qsim.code_block import command_type
+from qsim.event_queue import queue, event_response, event_start_response, event_ignore
 from qsim.expression_analyser import expression_analyser
+from qsim.json_builder import json_builder
 from qsim.http_client import http_client
 from qsim.logging import logging
 from qsim.messages import tas_command_type
@@ -29,8 +31,10 @@ class task(object):
         
         self.__code_block_locker = threading.RLock()
         
-        self.__tas_response_condition = threading.Condition()
-        self.__tas_responses = []
+        self.__tas_message_condition = threading.Condition()
+        self.__tas_messages = []
+
+        self.__previous_command = None
 
 
     def start(self):
@@ -54,6 +58,10 @@ class task(object):
         return self.__context.get_id()
 
 
+    def get_queue_id(self):
+        return self.__context.get_queue_id()
+
+
     def notify(self, tas_notification_id, message_payload=None):
         reply_code = None
         string_message_id = tas_notification_id
@@ -66,17 +74,17 @@ class task(object):
                 
                 logging.info("Code block for the message '%s' is found (reply code: '%s').", string_message_id, str(reply_code))
 
-        with self.__tas_response_condition:
+        with self.__tas_message_condition:
             self.__context.set_last_input_message((tas_notification_id, message_payload))
-            self.__tas_responses.append(string_message_id)
-            self.__tas_response_condition.notify_all()
+            self.__tas_messages.append(string_message_id)
+            self.__tas_message_condition.notify_all()
         
         return reply_code
 
 
-    def __send(self, tas_method, tas_link, tas_content):
+    def __send(self, tas_method, tas_link, tas_content, headers):
         tas_client = http_client(self.__context.get_tas_address(), self.__context.get_tas_port())
-        return tas_client.send_request(tas_method, tas_link, tas_content)
+        return tas_client.send_request(tas_method, tas_link, tas_content, headers)
 
 
     def __run(self):
@@ -96,6 +104,12 @@ class task(object):
             
             elif command == command_type.COMMAND_WAIT:
                 self.__process_wait_command(arguments[0])
+
+            elif command == command_type.COMMAND_REPLY:
+                self.__process_reply_command(arguments[0], arguments[1], arguments[2], arguments[3])
+
+            elif command == command_type.COMMAND_IGNORE:
+                self.__process_ignore_command()
 
             elif command == command_type.COMMAND_ASK:
                 self.__process_ask_command(arguments[0])
@@ -118,34 +132,67 @@ class task(object):
             
             else:
                 logging.error("(QSim Service task '%s') unexpected command is detected...", self.__context.get_id())
-            
+
+            self.__previous_command = command
+
             with self.__code_block_locker:
                 command_container = self.__context.get_next_command()
         
-        self.__manager.delete(self.__context.get_id(), internal=True)
+        self.__manager.delete(self.__context.get_id())
         logging.info("(QSim Service task '%s') session is terminated at '%s'.", self.__context.get_id(), time.ctime())
 
 
-    def __process_wait_command(self, expected_response):
-        logging.debug("(QSim Service task '%s') wait for TAS callback command (response: '%s')...", self.__context.get_id(), expected_response)
+    def __process_wait_command(self, expected_message):
+        logging.debug("(QSim Service task '%s') wait for TAS message ('%s')...", self.__context.get_id(), expected_message)
         
         while self.__active is True:
             response = ""
             
-            with self.__tas_response_condition:
-                while len(self.__tas_responses) == 0 and self.__active is True:
-                    self.__tas_response_condition.wait()
+            with self.__tas_message_condition:
+                while len(self.__tas_messages) == 0 and self.__active is True:
+                    self.__tas_message_condition.wait()
 
-                if len(self.__tas_responses) > 0:
-                    response = self.__tas_responses.pop()
+                if len(self.__tas_messages) > 0:
+                    response = self.__tas_messages.pop()
             
-            if response != expected_response:
-                logging.warning("(QSim Service task '%s') unexpected response is received from TAS: '%s' (but expected: '%s'), continue to wait.", self.__context.get_id(), response, expected_response)
+            if response != expected_message:
+                logging.warning("(QSim Service task '%s') unexpected message is received from TAS: '%s' (but expected: '%s'), continue to wait.", self.__context.get_id(), response, expected_message)
                 continue
             
             else:
                 logging.debug("(QSim Service task '%s') expected response is received '%s', stop waiting process.", self.__context.get_id(), response)
                 break
+
+
+    def __process_reply_command(self, code, message, json_body, headers):
+        logging.debug("(QSim Service task '%s') command REPLY is executing...", self.__context.get_id())
+
+        previous_message = self.__context.get_last_input_message()[0]
+
+        if previous_message is None:
+            logging.error("(QSim Service task '%s') impossible to reply, nothing was received.", self.__context.get_id())
+            return
+
+        if previous_message == tas_command_type.TASK_START:
+            if (json_body is None) or (len(json_body) == 0):
+                json_body = json_builder.start_qsim_response(self.__context.get_id())
+
+            event = event_start_response(code, message, headers, json_body)
+
+        else:
+            event = event_response(code, message, headers, json_body)
+
+        queue.put(event)
+
+        logging.debug("(QSim Service task '%s') Send event response to '%s' (code: '%d') to HTTP handler queue.",
+                      self.__context.get_id(), previous_message, code)
+
+
+    def __process_ignore_command(self):
+        logging.debug("(QSim Service task '%s') command IGNORE is executing...", self.__context.get_id())
+
+        event = event_ignore()
+        queue.put(event)
 
 
     def __process_ask_command(self, variable_name):
@@ -161,7 +208,7 @@ class task(object):
 
 
     def __assign_variable_value(self, variable_name, variable_value):
-        if variable_name not in {"SESSION_ID", "PARTY_ID"}:
+        if variable_name not in {"SESSION_ID", "PARTY_ID", "RCACCOUNT_ID", "RCEXTENSION_ID"}:
             logging.error("(QSim Service task '%s') Variable '%s' is not supported.", self.__context.get_id(), variable_name)
             return
 
@@ -169,6 +216,10 @@ class task(object):
             self.__context.set_session_id(variable_value)
         elif variable_name == "PARTY_ID":
             self.__context.set_party_id(variable_value)
+        elif variable_name == "RCACCOUNT_ID":
+            self.__context.set_rcaccount_id(variable_value)
+        elif variable_name == "RCEXTENSION_ID":
+            self.__context.set_rcextension_id(variable_value)
 
 
     def __process_timeout_command(self, timeout):
@@ -201,7 +252,7 @@ class task(object):
         
         elif action == "FORWARD":
             tas_link = self.__context.get_tas_link_forward()
-            tas_method = "PUT"
+            tas_method = "POST"
 
         elif action == "HUNT":
             tas_link = self.__context.get_task_link_hunt()
@@ -218,7 +269,16 @@ class task(object):
         tas_content = self.__translate_content(tas_content)
         
         logging.info("(QSim Service task '%s') send command request to TAS ('%s', '%s').", self.__context.get_id(), tas_method, action)
-        (status, json_response) = self.__send(tas_method, tas_link, tas_content)
+
+        headers = dict()
+        rcaccount_id = self.__context.get_rcaccount_id()
+        rcextension_id = self.__context.get_rcextension_id()
+        if rcaccount_id:
+            headers["rcaccountid"] = rcaccount_id
+        if rcextension_id:
+            headers["rcextensionid"] = rcextension_id
+
+        (status, json_response) = self.__send(tas_method, tas_link, tas_content, headers)
         if (status >= 200) and (status <= 299):
             if tas_method == "POST":
                 response = json.loads(json_response)
@@ -269,7 +329,7 @@ class task(object):
         content = tas_content
         if (tas_content is not None) and (len(tas_content) > 0):
             content = content.replace("$(accountId)", self.__context.get_account_id())
-            content = content.replace("$(taskId)", self.__context.get_task_id())
+            content = content.replace("$(queueId)", self.__context.get_queue_id())
             content = content.replace("$(sessionId)", self.__context.get_id())
             content = content.replace("$(partyId)", self.__context.get_id())
             

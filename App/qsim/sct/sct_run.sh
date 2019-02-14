@@ -1,1 +1,1 @@
-pybot sct_*.robot
+python -m robot sct_*.robot

@@ -1,3 +1,6 @@
+@@@ WAIT TASK_START
+@@@ REPLY 201
+
 @@@ ASSIGN SESSION_ID 200001
 @@@ ASSIGN PARTY_ID 300001
 
@@ -11,8 +14,8 @@
     ],
     "interruptible":    true,
     "repeat":           true,
-    "onPlayed":         "/telephony/v1/account/$(accountId)/services/queue/$(taskId)/voice/tasks/$(sessionId)/actions/plays",
-    "onFailure":        "/telephony/v1/account/$(accountId)/services/queue/$(taskId)/voice/tasks/$(sessionId)/actions/plays"
+    "onPlayed":         "/telephony/v1/account/$(accountId)/services/queue/$(queueId)/voice/tasks/$(sessionId)/actions/plays",
+    "onFailure":        "/telephony/v1/account/$(accountId)/services/queue/$(queueId)/voice/tasks/$(sessionId)/actions/plays"
 }
 
 
