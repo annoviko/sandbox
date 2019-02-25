@@ -1,21 +1,43 @@
 class Solution {
 public:
-    int search(vector<int>& nums, int target) {
+    int search(std::vector<int>& nums, int target) {
         if (nums.empty()) { return -1; }
-        
-        if (nums.size() == 1 && nums[0] == target) { return 0; }
-        else { return -1; }
-        
-        int index_start = 0;
-        int index_end = nums.size() / 2;
-        int position = -1;
-        
-        while(true) {
-            if (nums[index_start] > nums[index_end]) {
-                if (target > )
-            }
+        if (nums.size() == 1) {
+            return nums[0] == target ? 0 : -1;
         }
-                
-        return position;
+        
+        int lborder = 0;
+        int rborder = nums.size() - 1;
+        int middle = (rborder + lborder) / 2;
+
+        do {
+            if (target == nums[lborder]) { return lborder; }
+            if (target == nums[rborder]) { return rborder; }
+            if (target == nums[middle]) { return middle; }
+
+            if (target > nums[lborder]) {
+                if (target > nums[middle] && nums[middle] > nums[lborder]) {
+                    lborder = middle;
+                }
+                else {
+                    rborder = middle;
+                }
+            }
+            else if (target < nums[rborder]) {
+                if (target < nums[middle] && nums[middle] < nums[rborder]) {
+                    rborder = middle;
+                }
+                else {
+                    lborder = middle;
+                }
+            }
+            else {
+                return -1;
+            }
+
+            middle = (rborder + lborder) / 2;
+        } while (lborder != rborder - 1 && lborder != rborder);
+
+        return -1;
     }
 };
