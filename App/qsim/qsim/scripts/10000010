@@ -1,0 +1,26 @@
+@@@ WAIT TASK_START
+@@@ REPLY 201
+
+@@@ SEND FORWARD_GROUP
+HEADER Origin 127.0.0.1:8000
+{
+    "targets":
+    [
+        { "extensionId" : "400131053008" },
+        { "extensionId" : "400131054008" }
+    ],
+    "onNotify":     "/telephony/v1/account/$(accountId)/services/queue/$(queueId)/voice/tasks/$(sessionId)/actions/notify_forward_group",
+    "onResult":     "/telephony/v1/account/$(accountId)/services/queue/$(queueId)/voice/tasks/$(sessionId)/actions/result_forward_group"
+}
+
+@@@ SEND PATCH_FORWARD_GROUP
+HEADER Origin 127.0.0.1:8000
+{
+    "targets":
+    [
+        { "extensionId" : "400131053008" }
+    ]
+}
+
+@@@ WAIT TASK_STOP
+@@@ REPLY 204

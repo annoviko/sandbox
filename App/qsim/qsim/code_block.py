@@ -121,8 +121,9 @@ class code_block:
             if self.__command_sequence[-1][0] == command_type.COMMAND_REPLY:
                 self.__command_sequence[-1][1][2] = self.__command_content.lstrip().rstrip()
                 self.__command_sequence[-1][1][3] = self.__command_headers
-            else:
+            elif self.__command_sequence[-1][0] == command_type.COMMAND_SEND:
                 self.__command_sequence[-1][1][1] = self.__command_content.lstrip().rstrip()
+                self.__command_sequence[-1][1][2] = self.__command_headers
         
         self.__content_flag = False
         self.__command_content = ""
@@ -185,7 +186,7 @@ class code_block:
         self.__content_flag = True
         
         command_line_arguments = argument.split()
-        self.__command_sequence.append((command, [command_line_arguments[0], "", command_line_arguments[1:]]))
+        self.__command_sequence.append((command, [command_line_arguments[0], "", {}, command_line_arguments[1:]]))
         
         return True
 

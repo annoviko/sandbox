@@ -29,6 +29,12 @@ class http_parser:
             if (reg_object):
                 return http_parser.extract_qsim_start_request(reg_object)
 
+            if re.match(".*/on-command-error", path):
+                return http_parser.extract_tas_error_callback()
+            if re.match(".*/on-command-update", path):
+                return http_parser.extract_tas_update_callback()
+
+            #just a backward compatibility. To be removed after all callbacks will be updated at TAS
             reg_object = re.match("/telephony/v1/account/(\d+)/services/queue/(\d+)/voice/tasks/(\d+)/actions/(.*)", path)
             if (reg_object):
                 return http_parser.extract_tas_action_result(reg_object)
@@ -82,6 +88,13 @@ class http_parser:
         return {struct_field.id:          tas_command_type.SERVICE_STATUS,
                 struct_field.account_id:  reg_object.group(1)}
 
+    @staticmethod
+    def extract_tas_error_callback():
+        return {struct_field.id:    tas_command_type.ON_COMMAND_ERROR}
+
+    @staticmethod
+    def extract_tas_update_callback():
+        return {struct_field.id:    tas_command_type.ON_COMMAND_UPDATE}
 
     @staticmethod
     def extract_tas_action_result(reg_object):
@@ -90,21 +103,25 @@ class http_parser:
         if action_reg_object:
             action = action_reg_object.group(1)
 
-            if action == "plays":
-                message_id = tas_command_type.RESULT_PLAY
-            
-            elif action == "collects":
+            if action == "collects":
                 message_id = tas_command_type.RESULT_COLLECT
-            
+
+            elif action == "result_forward_group":
+                message_id = tas_command_type.RESULT_FORWARD_GROUP
+
+            elif action == "notify_forward_group":
+                message_id = tas_command_type.NOTIFY_FORWARD_GROUP
+
             else:
                 logging.error("Unknown result action from TAS is detected '%s'.", action)
                 return parser_failure.UNKNOWN_PATH
-            
-            return {struct_field.id:           message_id,
-                    struct_field.account_id:   reg_object.group(1),
-                    struct_field.script_id:    reg_object.group(2),
-                    struct_field.session_id:   reg_object.group(3),
-                    struct_field.action_id:    0}
+
+
+            return {struct_field.id:            message_id,
+                    struct_field.account_id:    reg_object.group(1),
+                    struct_field.script_id:     reg_object.group(2),
+                    struct_field.session_id:    reg_object.group(3),
+                    struct_field.action_id:     0}
         else:
             logging.error("Unknown result action format from TAS is detected '%s'.", action_line)
             return parser_failure.INCORRECT_BODY

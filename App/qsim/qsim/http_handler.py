@@ -105,6 +105,16 @@ class http_handler(SimpleHTTPRequestHandler):
             tas_request["tas_address"] = {"ip": tas_host, "port": tas_port}
             tas_request["account_id"] = request[struct_field.account_id]
 
+            # fill by default values
+            tas_request["session_id"] = tas_request["sessionId"]
+            tas_request["party_id"] = tas_request["inPartyId"]
+            tas_request["q_party_id"] = tas_request["qPartyId"]
+            tas_request["rcaccount_id"] = tas_request["account_id"]
+            tas_request["rcextension_id"] = tas_request["account_id"]
+            tas_request["rcbrand_id"] = "1210"
+
+            logging.debug("QueueId (%s): Store default party ID (%s) and session ID (%s)." % (request[struct_field.script_id], tas_request["party_id"], tas_request["session_id"]))
+
             if self.__get_session_manager().create(request[struct_field.script_id], tas_request) is False:
                 message = "Impossible to create session object due to lack of scenario file."
                 logging.error(message)
@@ -136,29 +146,91 @@ class http_handler(SimpleHTTPRequestHandler):
         #
         # RESULT_ACTION
         #
-        elif (request[struct_field.id] == tas_command_type.RESULT_COLLECT or
-              request[struct_field.id] == tas_command_type.RESULT_PLAY):
-            
+        elif (request[struct_field.id] == tas_command_type.ON_COMMAND_UPDATE or
+              request[struct_field.id] == tas_command_type.ON_COMMAND_ERROR):
+
             if configuration.get_failure_action_result_code() is not None:
-                self.__send_response(configuration.get_failure_action_result_code(), None, configuration.get_failure_action_result_message())
+                self.__send_response(configuration.get_failure_action_result_code(), None,
+                                     configuration.get_failure_action_result_message())
                 return
-            
-            session_id = request[struct_field.session_id]
-            message_id = request[struct_field.id]
-            # script_id   = request[struct_field.script_id];
 
             message_size = int(self.headers['Content-Length'])
-            json_result = self.rfile.read(message_size)
-            
-            logging.info("Callback action result is received (id: '%s').", message_id)
-            logging.debug("Content of the callback result:\n%s", json_result)
-            
+            json_result = self.rfile.read(message_size).decode('utf-8')
+
             # it is represented by map because most probably other staff may be conveyed to session.
             json_instance = None
             if message_size > 0:
                 try:
                     json_instance = json.loads(json_result)
+                except:
+                    logging.error("Impossible to parse JSON - corrupted JSON payload is received.")
+                    self.__send_response(http_code.HTTP_BAD_REQUEST, "\"Corrupted JSON payload in POST request.\"")
+                    return
 
+            message_playload = {'json': json_instance}
+
+            session_id = json_instance["sessionId"]
+            message_id = json_instance["commandId"]
+            logging.info("Callback is received (id: '%s').", message_id)
+            logging.vip("Content of the callback result:\n%s", json_result)
+
+            if self.__get_session_manager().exist(session_id):
+                # check if code is returned by trigger
+                reply_code = self.__get_session_manager().notify(session_id, message_id, message_playload)
+
+                if reply_code is None:
+                    # if there is no trigger then let's take it from the queue, if there is user-specific code
+                    try:
+                        response = queue.get(True, 1)
+                        event_type = type(response)
+                        if event_type == event_ignore:
+                            logging.debug("Ignore incoming request (do not sent response).")
+                            return
+
+                        reply_code = response.code
+                        reply_message = response.message
+
+                        logging.debug("Specific reply to incoming request '%s' (code: '%s', message: '%s')." %
+                                      (message_id, reply_code, reply_message))
+
+                    except:
+                        # otherwise send default code
+                        reply_code = http_code.HTTP_OK
+                        reply_message = "\"Success.\""
+
+                        logging.debug("Default reply is used for incoming request '%s'." % message_id)
+                else:
+                    reply_message = "\"Specified reply code is used.\""
+                    logging.debug("Specific reply is used for incoming request '%s' via trigger "
+                                  "(code: '%s', message: '%s')." % (message_id, reply_code, reply_message))
+
+                self.__send_response(reply_code, reply_message)
+                return
+
+            self.__send_response(http_code.HTTP_NOT_FOUND, "\"Session '" + str(session_id) + "' is not found.\"")
+
+        elif (request[struct_field.id] == tas_command_type.RESULT_COLLECT or
+              request[struct_field.id] == tas_command_type.RESULT_FORWARD_GROUP or
+              request[struct_field.id] == tas_command_type.NOTIFY_FORWARD_GROUP):
+            
+            if configuration.get_failure_action_result_code() is not None:
+                self.__send_response(configuration.get_failure_action_result_code(), None, configuration.get_failure_action_result_message())
+                return
+
+            session_id = request[struct_field.session_id]
+            message_id = request[struct_field.id]
+
+            message_size = int(self.headers['Content-Length'])
+            json_result = self.rfile.read(message_size).decode('utf-8')
+            
+            logging.info("Callback action result is received (id: '%s').", message_id)
+            logging.vip("Content of the callback result:\n%s", json_result)
+
+            # it is represented by map because most probably other staff may be conveyed to session.
+            json_instance = None
+            if message_size > 0:
+                try:
+                    json_instance = json.loads(json_result)
                 except:
                     logging.error("Impossible to parse JSON - corrupted JSON payload is received.")
                     self.__send_response(http_code.HTTP_BAD_REQUEST, "\"Corrupted JSON payload in POST request.\"")
@@ -167,13 +239,34 @@ class http_handler(SimpleHTTPRequestHandler):
             message_playload = {'json': json_instance}
             
             if self.__get_session_manager().exist(session_id):
+                # check if code is returned by trigger
                 reply_code = self.__get_session_manager().notify(session_id, message_id, message_playload)
 
                 if reply_code is None:
-                    reply_code = http_code.HTTP_OK
-                    reply_message = "\"Success.\""
+                    # if there is no trigger then let's take it from the queue, if there is user-specific code
+                    try:
+                        response = queue.get(True, 1)
+                        event_type = type(response)
+                        if event_type == event_ignore:
+                            logging.debug("Ignore incoming request (do not sent response).")
+                            return
+
+                        reply_code = response.code
+                        reply_message = response.message
+
+                        logging.debug("Specific reply to incoming request '%s' (code: '%s', message: '%s')." %
+                                      (message_id, reply_code, reply_message))
+
+                    except:
+                        # otherwise send default code
+                        reply_code = http_code.HTTP_OK
+                        reply_message = "\"Success.\""
+
+                        logging.debug("Default reply is used for incoming request '%s'." % message_id)
                 else:
                     reply_message = "\"Specified reply code is used.\""
+                    logging.debug("Specific reply is used for incoming request '%s' via trigger "
+                                  "(code: '%s', message: '%s')." % (message_id, reply_code, reply_message))
                 
                 self.__send_response(reply_code, reply_message)
                 return
@@ -222,6 +315,7 @@ class http_handler(SimpleHTTPRequestHandler):
                 if reply_code is None:
                     reply_code = http_code.HTTP_OK_NO_CONTENT
 
+                logging.info("Reply is not provided for TASK_STOP, use simulator response code (%d).", reply_code)
                 self.__send_response(reply_code)
 
             else:
@@ -230,6 +324,7 @@ class http_handler(SimpleHTTPRequestHandler):
                     pass
 
                 elif event_type == event_response:
+                    logging.info("Reply to TASK_STOP is provided by scenario (code: %d).", response.code)
                     self.__send_response(response.code, response.body, response.message, response.headers)
 
                 else:
@@ -256,11 +351,18 @@ class http_handler(SimpleHTTPRequestHandler):
             for key, value in headers.items():
                 self.send_header(key, value)
 
-        self.end_headers()
+        try:
+            self.end_headers()
         
-        if body is not None:
-            self.wfile.write(body)
+            if body is not None:
+                self.wfile.write(body)
+
+            statistical.inc_qsim_responses()
         
-        statistical.inc_qsim_responses()
-        
-        logging.info("Send response to TAS (HTTP code '%d (%s)', HTTP body '%s')", http_code, str(http_message), body)
+            logging.info("Send response to TAS (code '%d (%s)', body '%s')", http_code, str(http_message), body)
+
+        except ConnectionResetError:
+            logging.error("Impossible to send request to TAS due to reset connection.")
+
+        except Exception as expection_object:
+            logging.error("Impossible to send request to TAS due to unknown reason ('%s')." % expection_object)

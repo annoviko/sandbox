@@ -1,4 +1,5 @@
 from qsim.code_block import command_type
+from qsim.configuration import configuration
 from qsim.event_queue import queue, event_response, event_start_response, event_ignore
 from qsim.expression_analyser import expression_analyser
 from qsim.json_builder import json_builder
@@ -65,7 +66,7 @@ class task(object):
     def notify(self, tas_notification_id, message_payload=None):
         reply_code = None
         string_message_id = tas_notification_id
-        
+
         with self.__code_block_locker:
             trigger = self.__context.get_trigger(tas_notification_id)
             if trigger is not None:
@@ -97,7 +98,7 @@ class task(object):
             (command, arguments) = command_container
             
             if command == command_type.COMMAND_SEND:
-                self.__process_send_command(arguments[0], arguments[1], arguments[2])
+                self.__process_send_command(arguments[0], arguments[1], arguments[2], arguments[3])
             
             elif command == command_type.COMMAND_TIMEOUT:
                 self.__process_timeout_command(arguments[0])
@@ -231,7 +232,7 @@ class task(object):
         logging.user(text)
 
 
-    def __process_send_command(self, action, tas_content, arguments):
+    def __process_send_command(self, action, tas_content, headers, arguments):
         logging.debug("(QSim Service task '%s') command SEND is executing...", self.__context.get_id())
         
         if action == "PLAY":
@@ -241,22 +242,53 @@ class task(object):
         elif action == "STOP_PLAY":
             tas_link = self.__context.get_tas_link_stop_play()
             tas_method = "DELETE"
-        
+
+        elif action == "GET_PLAY":
+            tas_link = self.__context.get_tas_link_stop_play()
+            tas_method = "GET"
+
         elif action == "COLLECT":
             tas_link = self.__context.get_tas_link_start_collect()
             tas_method = "POST"
-        
+
+        elif action == "GET_COLLECT":
+            tas_link = self.__context.get_tas_link_get_collect()
+            tas_method = "GET"
+
         elif action == "STOP_COLLECT":
             tas_link = self.__context.get_tas_link_stop_collect()
             tas_method = "DELETE"
-        
+
         elif action == "FORWARD":
-            tas_link = self.__context.get_tas_link_forward()
+            party_id = None
+            if len(arguments) > 0:
+                expression = arguments[0]
+                analyser = expression_analyser(expression, self.__context)
+                party_id = analyser.evaluate()
+                arguments = []
+
+            tas_link = self.__context.get_tas_link_forward(party_id)
             tas_method = "POST"
 
-        elif action == "HUNT":
-            tas_link = self.__context.get_task_link_hunt()
+        elif action == "FORWARD_GROUP":
+            tas_link = self.__context.get_tas_link_add_forward_group()
             tas_method = "POST"
+
+        elif action == "PATCH_FORWARD_GROUP":
+            tas_link = self.__context.get_tas_link_forward_group()
+            tas_method = "PATCH"
+
+        elif action == "GET_FORWARD_GROUP":
+            tas_link = self.__context.get_tas_link_forward_group()
+            tas_method = "GET"
+
+        elif action == "DELETE_FORWARD_GROUP":
+            tas_link = self.__context.get_tas_link_forward_group()
+            tas_method = "DELETE"
+
+        elif action == "GET_SESSION":
+            tas_link = self.__context.get_tas_link_session()
+            tas_method = "GET"
 
         else:
             logging.error("Unknown send command '%s'.", action)
@@ -270,33 +302,44 @@ class task(object):
         
         logging.info("(QSim Service task '%s') send command request to TAS ('%s', '%s').", self.__context.get_id(), tas_method, action)
 
-        headers = dict()
-        rcaccount_id = self.__context.get_rcaccount_id()
-        rcextension_id = self.__context.get_rcextension_id()
-        if rcaccount_id:
-            headers["rcaccountid"] = rcaccount_id
-        if rcextension_id:
-            headers["rcextensionid"] = rcextension_id
 
-        (status, json_response) = self.__send(tas_method, tas_link, tas_content, headers)
+        custom_headers = {"rcaccountid": self.__context.get_rcaccount_id(),
+                          "rcextensionid": self.__context.get_rcextension_id(),
+                          "rcbrandid": self.__context.get_brand_id(),
+                          "origin": "127.0.0.1:" + str(configuration.get_qsim_port())}
+
+        # add new and overwrite existed default custom headers in line with scenario
+        for key, value in headers.items():
+            custom_headers[key.lower()] = value
+
+        (status, json_response) = self.__send(tas_method, tas_link, tas_content, custom_headers)
+        if json_response is not None:
+            self.__context.set_last_input_message(json_response)
+
         if (status >= 200) and (status <= 299):
-            if tas_method == "POST":
-                response = json.loads(json_response)
-                if response.get("id", None) is None:
-                    logging.error("(QSim Service task '%s') TAS reply to '%s' command '%s' without JSON body with 'id' key.", self.__context.get_id(), tas_method, action)
-                
-                else:
-                    action_id = response['id']
+            if (tas_method == "POST") and (json_response is not None) and (len(json_response) > 0):
+                response = json.loads(json_response.decode('utf-8'))
 
-                    if action == "PLAY":
-                        self.__context.set_play_id(action_id)
-                    elif action == "COLLECT":
-                        self.__context.set_collect_id(action_id)
-                    
-                    logging.info("(QSim Service task '%s') TAS accepts '%s' command '%s' and return action id: '%s'.", self.__context.get_id(), tas_method, action, action_id)
-        
+                if action == "PLAY":
+                    action_id = response['id']
+                    self.__context.set_play_id(action_id)
+
+                elif action == "COLLECT":
+                    action_id = response['id']
+                    self.__context.set_collect_id(action_id)
+
+                elif action == "FORWARD_GROUP":
+                    action_id = response['forwardGroup']['id']
+                    self.__context.set_forward_group_id(action_id)
+
+                else:
+                    action_id = None
+
+                logging.info("(QSim Service task '%s') TAS accepts '%s' command '%s' and return action id: '%s'.", self.__context.get_id(), tas_method, action, action_id)
+            else:
+                logging.vip("(QSim Service task '%s') TAS reply to '%s' command '%s' by success status (code: '%d').", self.__context.get_id(), tas_method, action, status)
         else:
-            logging.warning("(QSim Service task '%s') TAS reply to '%s' command '%s' by failure status (code: '%d').", self.__context.get_id(), tas_method, action, status)
+            logging.warning("(QSim Service task '%s') TAS reply to '%s' command '%s' by failure status (code: '%d', reason: '%s').", self.__context.get_id(), tas_method, action, status, json_response)
 
 
     def __process_move_json(self, name):

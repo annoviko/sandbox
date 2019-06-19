@@ -14,9 +14,9 @@
     ],
     "interruptible":    true,
     "repeat":           true,
-    "onPlayed":         "/telephony/v1/account/$(accountId)/services/queue/$(queueId)/voice/tasks/$(sessionId)/actions/plays",
-    "onFailure":        "/telephony/v1/account/$(accountId)/services/queue/$(queueId)/voice/tasks/$(sessionId)/actions/plays"
+    "onResult":         "/telephony/v1/account/$(accountId)/services/queue/$(queueId)/voice/tasks/$(sessionId)/actions/plays",
+    "onNotify":         "/telephony/v1/account/$(accountId)/services/queue/$(queueId)/voice/tasks/$(sessionId)/actions/plays"
 }
 
 ### Wait when TAS sends play result http using callback command.
-@@@ WAIT RESULT_PLAY
+@@@ WAIT ON_COMMAND_UPDATE

@@ -1,0 +1,52 @@
+@@@ WAIT TASK_START
+@@@ REPLY 201
+
+@@@ SEND PLAY
+HEADER Origin 127.0.0.1:8000
+{
+   "resources" :
+    [
+        {
+            "uri": "http://10.62.25.180/prompts/english__united_states_/forwardgreeting.wav"
+        }
+    ],
+    "interruptible":    false,
+    "repeat":           false,
+    "onResult":         "/telephony/v1/account/$(accountId)/services/queue/$(queueId)/voice/tasks/$(sessionId)/actions/plays",
+    "onNotify":         "/telephony/v1/account/$(accountId)/services/queue/$(queueId)/voice/tasks/$(sessionId)/actions/plays"
+}
+
+@@@ WAIT ON_COMMAND_UPDATE
+
+@@@ SEND COLLECT
+HEADER Origin 127.0.0.1:8000
+{
+   "patterns": [
+        "x"
+    ],
+   "timeout": "10000",
+   "interDigitTimeout": "5000" ,
+   "onResult": "/telephony/v1/account/$(accountId)/services/queue/$(queueId)/voice/tasks/$(sessionId)/actions/collects"
+}
+
+@@@ SEND FORWARD_GROUP
+HEADER Origin 127.0.0.1:8000
+{
+    "targets":
+    [
+        { "extensionId" : "400131053008" }
+    ],
+    "onNotify":     "/telephony/v1/account/$(accountId)/services/queue/$(queueId)/voice/tasks/$(sessionId)/actions/notify_forward_group",
+    "onResult":     "/telephony/v1/account/$(accountId)/services/queue/$(queueId)/voice/tasks/$(sessionId)/actions/result_forward_group"
+}
+
+@@@ PRINT ENTER DIGIT
+@@@ WAIT RESULT_COLLECT
+
+@@@ SEND FORWARD $(QSIM.CONTEXT)["q_party_id"]
+{
+  "voicemail" : "400131053008"
+}
+
+@@@ WAIT TASK_STOP
+@@@ REPLY 204

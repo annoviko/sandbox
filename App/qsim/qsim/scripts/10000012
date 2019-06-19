@@ -1,0 +1,21 @@
+@@@ WAIT TASK_START
+@@@ REPLY 201
+
+@@@ SEND PLAY
+{
+    "mediaUrls":
+    [
+      "http://10.62.25.180/prompts/english__united_states_/youhave.wav",
+      "http://10.62.25.180/prompts/english__united_states_/newmessages.wav"
+    ],
+    "interruptible":    true,
+    "repeat":           true,
+    "onResult":         "/telephony/v1/account/$(accountId)/services/queue/$(queueId)/voice/tasks/$(sessionId)/actions/result_play",
+    "onNotify":         "/telephony/v1/account/$(accountId)/services/queue/$(queueId)/voice/tasks/$(sessionId)/actions/notify_play"
+}
+
+@@@ WAIT ON_COMMAND_ERROR
+@@@ REPLY 200
+
+@@@ WAIT TASK_STOP
+@@@ REPLY 204

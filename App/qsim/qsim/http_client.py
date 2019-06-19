@@ -19,7 +19,8 @@ class http_client:
             logging.debug("Send HTTP request to TAS (%s:%s): '%s' '%s'.", self.__address, self.__port, http_method, http_link)
             logging.debug("JSON payload of the HTTP request to TAS: '%s'.", json_request)
 
-            headers = {'Content-Type': 'application/json'}
+            headers = {"Content-Type": "application/json",
+                       "Accept": "*/*"}
             
             body = None
             if json_request is not None:

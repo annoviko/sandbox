@@ -1,0 +1,19 @@
+@@@ WAIT TASK_START
+@@@ REPLY 201
+
+@@@ SEND COLLECT
+HEADER Origin 127.0.0.1:8000
+{
+   "patterns": [
+        "xx#"
+    ],
+   "timeout": "10000",
+   "interDigitTimeout": "5000" ,
+   "onResult": "/telephony/v1/account/$(accountId)/services/queue/$(queueId)/voice/tasks/$(sessionId)/actions/collects"
+}
+
+@@@ WAIT RESULT_COLLECT
+@@@ REPLY 403
+
+@@@ WAIT TASK_STOP
+@@@ REPLY 204

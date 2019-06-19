@@ -14,10 +14,10 @@
     ],
     "interruptible":    true,
     "repeat":           true,
-    "onPlayed":         "/telephony/v1/account/$(accountId)/services/queue/$(queueId)/voice/tasks/$(sessionId)/actions/plays",
-    "onFailure":        "/telephony/v1/account/$(accountId)/services/queue/$(queueId)/voice/tasks/$(sessionId)/actions/plays"
+    "onResult":         "/telephony/v1/account/$(accountId)/services/queue/$(queueId)/voice/tasks/$(sessionId)/actions/plays",
+    "onNotify":         "/telephony/v1/account/$(accountId)/services/queue/$(queueId)/voice/tasks/$(sessionId)/actions/plays"
 }
 
 
 @@@ SEND STOP_PLAY
-@@@ WAIT RESULT_PLAY
+@@@ WAIT ON_COMMAND_UPDATE

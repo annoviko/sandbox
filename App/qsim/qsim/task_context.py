@@ -15,6 +15,7 @@ class task_context:
         
         self.__play_id = None
         self.__collect_id = None
+        self.__forward_group_id = None
 
         self.__task_id = task_context.__generate_task_id()
         
@@ -50,11 +51,14 @@ class task_context:
     def set_party_id(self, value):
         self.__tas_info["party_id"] = value
 
+
     def set_rcaccount_id(self, value):
         self.__tas_info["rcaccount_id"] = value
 
+
     def set_rcextension_id(self, value):
         self.__tas_info["rcextension_id"] = value
+
 
     def get_last_input_message(self):
         return self.__last_input_message
@@ -62,6 +66,10 @@ class task_context:
 
     def set_variable(self, name, value):
         self.__variables[name] = value
+
+
+    def get_tas_info(self):
+        return self.__tas_info
 
 
     def get_variable(self, name):
@@ -99,6 +107,14 @@ class task_context:
         return self.__collect_id
 
 
+    def set_forward_group_id(self, forward_group_id):
+        self.__forward_group_id = forward_group_id
+
+
+    def get_forward_group_id(self):
+        return self.__forward_group_id
+
+
     def get_next_command(self):
         if self.__cursor < len(self.__actions):
             self.__cursor = self.__cursor + 1
@@ -129,11 +145,18 @@ class task_context:
     def get_queue_id(self):
         return self.__script_id
 
+
     def get_rcaccount_id(self):
-        return self.__tas_info.get("rcaccount_id")
+        return self.__tas_info["rcaccount_id"]
+
 
     def get_rcextension_id(self):
-        return self.__tas_info.get("rcextension_id")
+        return self.__tas_info["rcextension_id"]
+
+
+    def get_brand_id(self):
+        return self.__tas_info["rcbrand_id"]
+
 
     def get_tas_address(self):
         return self.__tas_info["tas_address"]["ip"]
@@ -144,11 +167,16 @@ class task_context:
 
 
     def get_tas_link_session(self):
-        return "%s:%s/telephony/v1/account/%s/sessions/%s" % (self.get_tas_address(), str(self.get_tas_port()), self.__tas_info["account_id"], self.__tas_info["session_id"])
+        return "/telephony/v1/account/%s/sessions/%s" % (self.__tas_info["account_id"], self.__tas_info["session_id"])
 
 
-    def get_tas_link_party(self):
-        return "%s/parties/%s" % (self.get_tas_link_session(), self.__tas_info["party_id"])
+    def get_tas_link_party(self, party_id=None):
+        specific_party = party_id or self.__tas_info["party_id"]
+        return "%s/parties/%s" % (self.get_tas_link_session(), specific_party)
+
+
+    def get_tas_link_queue_party(self):
+        return "%s/parties/%s" % (self.get_tas_link_session(), self.__tas_info["q_party_id"])
 
 
     def get_tas_link_start_play(self):
@@ -163,12 +191,24 @@ class task_context:
         return "%s/collect" % (self.get_tas_link_party())
 
 
+    def get_tas_link_get_collect(self):
+        return "%s/collect/%s" % (self.get_tas_link_party(), str(self.get_collect_id()))
+
+
     def get_tas_link_stop_collect(self):
         return "%s/collect/%s" % (self.get_tas_link_party(), str(self.get_collect_id()))
 
 
-    def get_tas_link_forward(self):
-        return "%s/forward" % (self.get_tas_link_party())
+    def get_tas_link_forward(self, party_id=None):
+        return "%s/forward" % (self.get_tas_link_party(party_id))
+
+
+    def get_tas_link_add_forward_group(self):
+        return "%s/forward-group" % (self.get_tas_link_queue_party())
+
+
+    def get_tas_link_forward_group(self):
+        return "%s/forward-group/%s" % (self.get_tas_link_queue_party(), str(self.get_forward_group_id()))
 
 
     def get_task_link_hunt(self):
