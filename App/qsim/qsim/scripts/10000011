@@ -8,11 +8,10 @@ HEADER Origin 127.0.0.1:8000
         "xx#"
     ],
    "timeout": "10000",
-   "interDigitTimeout": "5000" ,
-   "onResult": "/telephony/v1/account/$(accountId)/services/queue/$(queueId)/voice/tasks/$(sessionId)/actions/collects"
+   "interDigitTimeout": "5000"
 }
 
-@@@ WAIT RESULT_COLLECT
+@@@ WAIT ON_COMMAND_UPDATE
 @@@ REPLY 403
 
 @@@ WAIT TASK_STOP

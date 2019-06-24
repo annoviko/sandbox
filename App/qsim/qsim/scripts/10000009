@@ -11,9 +11,7 @@ HEADER Origin 127.0.0.1:8000
         }
     ],
     "interruptible":    false,
-    "repeat":           false,
-    "onResult":         "/telephony/v1/account/$(accountId)/services/queue/$(queueId)/voice/tasks/$(sessionId)/actions/plays",
-    "onNotify":         "/telephony/v1/account/$(accountId)/services/queue/$(queueId)/voice/tasks/$(sessionId)/actions/plays"
+    "repeat":           false
 }
 
 @@@ WAIT ON_COMMAND_UPDATE
@@ -25,9 +23,10 @@ HEADER Origin 127.0.0.1:8000
         "x"
     ],
    "timeout": "10000",
-   "interDigitTimeout": "5000" ,
-   "onResult": "/telephony/v1/account/$(accountId)/services/queue/$(queueId)/voice/tasks/$(sessionId)/actions/collects"
+   "interDigitTimeout": "5000"
 }
+
+@@@ TIMEOUT 1000
 
 @@@ SEND FORWARD_GROUP
 HEADER Origin 127.0.0.1:8000
@@ -35,13 +34,11 @@ HEADER Origin 127.0.0.1:8000
     "targets":
     [
         { "extensionId" : "400131053008" }
-    ],
-    "onNotify":     "/telephony/v1/account/$(accountId)/services/queue/$(queueId)/voice/tasks/$(sessionId)/actions/notify_forward_group",
-    "onResult":     "/telephony/v1/account/$(accountId)/services/queue/$(queueId)/voice/tasks/$(sessionId)/actions/result_forward_group"
+    ]
 }
 
 @@@ PRINT ENTER DIGIT
-@@@ WAIT RESULT_COLLECT
+@@@ WAIT ON_COMMAND_UPDATE
 
 @@@ SEND FORWARD $(QSIM.CONTEXT)["q_party_id"]
 {

@@ -3,6 +3,9 @@ import inspect
 import threading
 import os
 
+from qsim.configuration import configuration
+from qsim.logger_listener import logger_server
+
 
 class prefix:
     DEBUG       = "[     DEBUG] "
@@ -26,6 +29,7 @@ class color:
 class logging:
     __resource_locker = threading.RLock()
     __file_log = None
+    __logger_server = None
 
 
     @staticmethod
@@ -39,10 +43,18 @@ class logging:
             message = logging.__time_mark() + message_color + message_prefix + file_caller + ": " + message + color.DEFAULT
             print(message % args)
 
+            if (logging.__logger_server is not None) and (logging.__logger_server.is_running()):
+                logging.__logger_server.notify(message % args)
+
             if logging.__file_log is not None:
                 file_descriptor = open(logging.__file_log, 'a')
-                file_descriptor.write((logging.__time_mark() + message_prefix + file_caller + ": " + message + "\n") % args)
+                file_descriptor.write((message + "\n") % args)
                 file_descriptor.close()
+
+
+    @staticmethod
+    def set_logger_server(server):
+        logging.__logger_server = server
 
 
     @staticmethod

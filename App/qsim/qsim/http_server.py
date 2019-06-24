@@ -1,6 +1,8 @@
 from socketserver import TCPServer
 
+from qsim.configuration import configuration
 from qsim.http_handler import http_handler
+from qsim.logger_listener import logger_server
 from qsim.logging import logging
 from qsim.statistical_logger import statistical_logger
 
@@ -11,6 +13,9 @@ class http_server:
 
         self.__ip = ip
         self.__port = port
+
+        self.__logger_server = logger_server("", configuration.get_log_server_port())
+        logging.set_logger_server(self.__logger_server)
 
         self.__statistical_logger = None
         if enable_statistical_logger:
@@ -36,6 +41,8 @@ class http_server:
         logging.vip("HTTP server is being closing (port: '%d').", self.__port)
         if self.__statistical_logger is not None:
             self.__statistical_logger.stop()
+
+        self.__logger_server.stop()
 
         self.__server.shutdown()
         self.__server.server_close()

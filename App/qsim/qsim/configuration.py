@@ -3,7 +3,6 @@ import os
 import sys
 
 from qsim.error_code import error_code
-from qsim.logging import logging
 
 
 class configuration:
@@ -14,7 +13,6 @@ class configuration:
     @staticmethod
     def load():
         if os.path.isfile(configuration.__configuration_filename) is False:
-            logging.error("Impossible to find configuration file.")
             return sys.exit(error_code.ERROR_CONFIGURATION_NOT_FOUND)
 
         configuration.__configuration_instance = configparser.ConfigParser()
@@ -51,7 +49,6 @@ class configuration:
         try:
             return int(configuration.__get_section(section)[key])
         except:
-            logging.error("Impossible extract integer value '%s'.", configuration.__get_section(section)[key])
             return None
 
 
@@ -76,6 +73,11 @@ class configuration:
 
 
     @staticmethod
+    def get_log_server_port():
+        return configuration.__get_integer("NETWORK", "qsim_logger_port_server")
+
+
+    @staticmethod
     def get_qsim_port():
         return configuration.__get_integer("NETWORK", "qsim_port_server")
 
@@ -88,31 +90,16 @@ class configuration:
     @staticmethod
     def __get_failure_descriptor(section, key):
         failure = [None, None]
-        success = True
 
-        failure_descriptor = ""
         if configuration.get_failure_mode_enable() is True:
             failure_descriptor = configuration.__get_section(section)[key].lstrip().rstrip()
             failure = failure_descriptor.split()
             if len(failure) == 2:
-                try:
-                    failure[0] = int(failure[0])
-                except:
-                    success = False
+                failure[0] = int(failure[0])
             
             elif len(failure) == 1:
-                try:
-                    failure[0] = int(failure[0])
-                    failure.append("")
-                
-                except: 
-                    success = False
-        
-            else:
-                success = False
-        
-        if success is not True:
-            logging.error("Impossible to extract failure descriptor '%s'.", failure_descriptor)
+                failure[0] = int(failure[0])
+                failure.append("")
         
         return failure
 

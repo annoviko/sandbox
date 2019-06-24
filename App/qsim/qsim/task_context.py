@@ -11,8 +11,7 @@ class task_context:
     def __init__(self, queue_id, tas_request):
         self.__script_id = queue_id
         self.__tas_info = tas_request
-        self.__action_id = None
-        
+
         self.__play_id = None
         self.__collect_id = None
         self.__forward_group_id = None
@@ -46,6 +45,10 @@ class task_context:
 
     def set_session_id(self, value):
         self.__tas_info["session_id"] = value
+
+
+    def get_session_id(self):
+        return self.__tas_info["session_id"]
 
 
     def set_party_id(self, value):
@@ -128,10 +131,6 @@ class task_context:
             return self.__actions[self.__cursor]
         
         return None
-
-
-    def get_action_id(self):
-        return self.__action_id
 
 
     def get_id(self):

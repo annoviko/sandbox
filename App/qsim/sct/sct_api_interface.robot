@@ -31,29 +31,41 @@ Start and Stop Task Continuously
     Stop Task     ${scenario id}   ${task id}
 
 
+Start Several Tasks
+    ${scenario id}=   Set Variable   10000001
+
+    ${task id 1}=   Start Task     ${scenario id}   tas_session_1
+    ${task id 2}=   Start Task     ${scenario id}   tas_session_2
+    ${task id 3}=   Start Task     ${scenario id}   tas_session_3
+
+    Stop Task     ${scenario id}   ${task id 1}
+    Stop Task     ${scenario id}   ${task id 2}
+    Stop Task     ${scenario id}   ${task id 3}
+
+
 Start Play Scenario
     ${scenario id}=   Set Variable   10000002
+    ${command id}=    Set Variable   20000001
 
     ${task id}=        Start Task    ${scenario id}
-    ${result url}   ${notify url}=   Wait For Play Request
-    Reply Success To Play Request    20000001
+    Wait For Play Request
+    Reply Success To Play Request    ${command id}
 
-    Send Play Complete Response      ${result url}
+    Send On Command Update   ${command id}
 
 
 Start Play Scenario with Stop Play
     ${scenario id}=   Set Variable   10000003
+    ${command id}=    Set Variable   20000002
 
     ${task id}=        Start Task    ${scenario id}
-    ${result url}   ${notify url}=   Wait For Play Request
+    Wait For Play Request
+    Reply Success To Play Request   ${command id}
 
-    ${play id}=   Set Variable   20000002
-    Reply Success To Play Request   ${play id}
-
-    Wait For Stop Play Request      ${play id}
+    Wait For Stop Play Request      ${command id}
     Reply By   204
 
-    Send Play Complete Response     ${result url}
+    Send On Command Update          ${command id}
 
 
 Start Task With Negative and Positive Responses
@@ -65,7 +77,7 @@ Start Task With Negative and Positive Responses
     ${expected status}=   Convert To Integer   405
     Start Task With Negative Expectation   ${scenario id}   POST   ${expected status}
 
-    ${task id}=   Start Task       ${scenario id}
+    ${task id}=   Start Task       ${scenario id}   default_session
     Stop Task     ${scenario id}   ${task id}
 
 
@@ -122,7 +134,7 @@ Send Collect with Custom Headers
     ${scenario id}=   Set Variable   10000007
     ${task id}=       Start Task    ${scenario id}
 
-    ${callback url}=   Wait For Collect Request
+    Wait For Collect Request
     ${headers}=        Get Request Headers
 
     Dictionary Should Contain Item   ${headers}   origin   192.168.55.77
@@ -131,7 +143,7 @@ Send Collect with Custom Headers
     ${collect id}=   Set Variable   20000002
     Reply Success To Collect Request   ${collect id}
 
-    Send Collect Complete Callback     ${callback url}
+    Send On Command Update   ${collect id}
 
     Stop Task     ${scenario id}   ${task id}
 
@@ -155,19 +167,19 @@ Receive Forward with Specific PartyId after Other Commands
     ${scenario id}=   Set Variable   10000009
     ${task id}=       Start Task     ${scenario id}
 
-    ${result url}   ${notify url}=   Wait For Play Request
+    Wait For Play Request
     ${play id}=        Set Variable   20000002
     Reply Success To Play Request     ${play id}
-    Send Play Complete Response       ${result url}
+    Send On Command Update            ${play id}
 
-    ${callback url}=   Wait For Collect Request
+    Wait For Collect Request
     ${collect id}=     Set Variable    30000003
     Reply Success To Collect Request   ${collect id}
 
     Wait For Forward Group Request
     Reply Success To Forward Group Request   40000004
 
-    Send Collect Complete Callback     ${callback url}
+    Send On Command Update             ${collect id}
 
     ${expected party id}=   Set Variable   cs00000000000987654321-3
     ${expected mailbox}=    Set Variable   400131053008
@@ -194,26 +206,13 @@ Custom Response to Collect Result
     ${scenario id}=   Set Variable   10000011
     ${task id}=       Start Task    ${scenario id}
 
-    ${callback url}=   Wait For Collect Request
+    Wait For Collect Request
     ${headers}=        Get Request Headers
 
     ${collect id}=   Set Variable   20000002
     Reply Success To Collect Request   ${collect id}
 
-    Send Collect Complete Callback     ${callback url}   403
-
-    Stop Task     ${scenario id}   ${task id}
-
-
-Play Notify and Play Result
-    ${scenario id}=   Set Variable   10000012
-    ${task id}=       Start Task    ${scenario id}
-
-    ${result url}   ${notify url}=   Wait For Play Request
-    ${play id}=     Set Variable     20000012
-    Reply Success To Play Request     ${play id}
-
-    Send Play Notify Callback   ${notify url}
+    Send On Command Update   ${collect id}  403
 
     Stop Task     ${scenario id}   ${task id}
 
@@ -235,9 +234,11 @@ Get Stop Task URL
 
 
 Start Task
-    [Arguments]   ${scenario id}
+    [Arguments]   ${scenario id}   ${session id}=default_session_id
     ${request body}=   Get File   data/start_task.json
     ${url}=            Get Start Task URL   ${scenario id}
+
+    ${request body}=   Set Json Value In String   ${request body}   sessionId   ${session id}
 
     Set Request Header    Content-Type   application/json-rpc
 
@@ -287,10 +288,6 @@ Wait For Play Request
     ${request url}=   Get Request URL
     ${ret}=   Should Match Regexp   ${request url}   .*/play
 
-    ${url result}=    Get Json Value From String   ${body}   onResult
-    ${url notify}=    Get Json Value From String   ${body}   onNotify
-    [Return]   ${url result}   ${url notify}
-
 
 Wait For Stop Play Request
     [Arguments]   ${play id}
@@ -321,9 +318,6 @@ Wait For Collect Request
 
     ${request url}=   Get Request URL
     ${ret}=   Should Match Regexp   ${request url}   .*/collect
-
-    ${url}=    Get Json Value From String   ${body}   onResult
-    [Return]   ${url}
 
 
 Reply Success To Collect Request
@@ -363,10 +357,6 @@ Wait For Forward Group Request
     ${request url}=   Get Request URL
     ${ret}=   Should Match Regexp   ${request url}   .*/forward-group
 
-    ${url result}=    Get Json Value From String   ${body}   onResult
-    ${url notify}=    Get Json Value From String   ${body}   onNotify
-    [Return]   ${url result}   ${url notify}
-
 
 Reply Success To Forward Group Request
     [Arguments]   ${group id}
@@ -384,7 +374,7 @@ Wait For Patch Forward Group Request
     Should Be Equal   ${method}   PATCH
 
     ${request url}=   Get Request URL
-    ${ret}=   Should Match Regexp   ${request url}   .*/forward-group/${group id}
+    ${ret}=   Should Match Regexp   ${request url}   .*/forward-group/*.
 
 
 Wait For Forward to VM Request
@@ -406,29 +396,14 @@ Reply Success To Forward To VM Eequest
     Reply By   200
 
 
-Send Play Complete Response
-    [Arguments]   ${callback url}
-    Send HTTP Request   POST   ${callback url}
+Send On Command Update
+    [Arguments]   ${action id}   ${expected response code}=200
+    ${url}=   Set Variable   /telephony/v1/account/1234567890/services/queue/on-command-update
 
-    ${response status}=   Get Response Status
-    ${expected status}=   Convert To Integer   200
-    Should Be Equal   ${response status}   ${expected status}
+    ${body}=   Get File   data/command_update.json
+    ${body}=   Set Json Value In String   ${body}   commandId   ${action id}
 
-
-Send Play Notify Callback
-    [Arguments]   ${callback url}
-    Send HTTP Request   POST   ${callback url}
-
-    ${response status}=   Get Response Status
-    ${expected status}=   Convert To Integer   200
-    Should Be Equal   ${response status}   ${expected status}
-
-
-Send Collect Complete Callback
-    [Arguments]   ${callback url}   ${expected response code}=200
-    ${body}=   Get File   data/collect_callback.json
-
-    Send HTTP Request   POST   ${callback url}   ${body}
+    Send HTTP Request   POST   ${url}   ${body}
 
     ${response status}=   Get Response Status
     ${expected status}=   Convert To Integer   ${expected response code}

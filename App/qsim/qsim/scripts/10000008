@@ -9,8 +9,7 @@ HEADER Header-Key Header-Value
         "xx#"
     ],
    "timeout": "10000",
-   "interDigitTimeout": "5000" ,
-   "onResult": "/telephony/v1/account/$(accountId)/services/queue/$(queueId)/voice/tasks/$(sessionId)/actions/collects"
+   "interDigitTimeout": "5000"
 }
 
 @@@ SEND GET_COLLECT

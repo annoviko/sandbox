@@ -63,6 +63,19 @@ class task(object):
         return self.__context.get_queue_id()
 
 
+    def get_session_id(self):
+        return self.__context.get_session_id()
+
+
+    def contains_action_id(self, command_id):
+        ids = [self.__context.get_play_id(), self.__context.get_collect_id(), self.__context.get_forward_group_id()]
+        for id in ids:
+            if command_id == id:
+                return True
+
+        return False
+
+
     def notify(self, tas_notification_id, message_payload=None):
         reply_code = None
         string_message_id = tas_notification_id
@@ -157,7 +170,8 @@ class task(object):
                     response = self.__tas_messages.pop()
             
             if response != expected_message:
-                logging.warning("(QSim Service task '%s') unexpected message is received from TAS: '%s' (but expected: '%s'), continue to wait.", self.__context.get_id(), response, expected_message)
+                logging.warning("(QSim Service task '%s') unexpected message is received from TAS: '%s' (but expected: '%s'), continue to wait.",
+                                self.__context.get_id(), response, expected_message)
                 continue
             
             else:
@@ -329,7 +343,7 @@ class task(object):
                     self.__context.set_collect_id(action_id)
 
                 elif action == "FORWARD_GROUP":
-                    action_id = response['forwardGroup']['id']
+                    action_id = response['id']
                     self.__context.set_forward_group_id(action_id)
 
                 else:
