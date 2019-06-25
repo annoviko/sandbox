@@ -135,7 +135,7 @@ class tas_api:
         return body
 
 
-    def flip(self, partyId, sessionId, callFlipId, assertion=False):
+    def flip(self, sessionId, partyId, callFlipId, assertion=False):
         content = {'callFlipId': callFlipId}
 
         url = '/telephony/v1/account/%s/sessions/%s/parties/%s/flip' % (self.__accountId, sessionId, partyId)
@@ -145,8 +145,8 @@ class tas_api:
 
         status, body = http_client(self.__tas_address, '8080').send('POST', url, json.dumps(content), headers)
 
-        if status != 201:
-            print("ERROR: Supervise was not successful (status '%s')" % str(status))
+        if status != 200:
+            print("ERROR: Flip was not successful (status '%s')" % str(status))
             if assertion:
                 exit(-1)
 
