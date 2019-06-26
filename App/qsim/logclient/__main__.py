@@ -1,7 +1,15 @@
 import socket
+import sys
 
-host = socket.gethostname()
+
+if len(sys.argv) != 2:
+    print("Incorrect amount of input arguments")
+    exit(-1)
+
+host = sys.argv[1]
 port = 8010
+
+print("Connect to QService Simulator %s:%s." % (host, port))
 
 tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 tcp_socket.connect((host, port))

@@ -53,7 +53,7 @@ class logger_server:
 
         self.__tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.__tcp_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        self.__tcp_socket.bind((self.__ip, self.__port))
+        self.__tcp_socket.bind(('', self.__port))
         self.__tcp_socket.listen(5)
 
         self.__server = threading.Thread(target=self.__run)
