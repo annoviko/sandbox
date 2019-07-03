@@ -21,8 +21,8 @@ api_callee.flip(session_id, callee_party_id, '*3', assertion=True)
 
 time.sleep(1)
 
-#input("Answer and drop on 101. After that press ENTER.")
-#print(api_caller.get_session(session_id))
+##input("Answer and drop on 101. After that press ENTER.")
+##print(api_caller.get_session(session_id))
 
 callee_forward_party_id = api_caller.get_party_by_state(session_id, 'Proceeding')
 body = api_forwarded.answer(session_id, callee_forward_party_id, db.phone3.deviceId, assertion=True)

@@ -230,7 +230,7 @@ class tas_api:
             return None
 
         reply = json.loads(body)
-        return reply
+        return json.dumps(reply, indent=3, sort_keys=True)
 
 
     def get_full_described_parties(self, session_id):
