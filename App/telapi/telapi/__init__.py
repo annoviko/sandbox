@@ -19,7 +19,7 @@ class tas_api:
         self.__rdg_port = 8888
 
 
-    def callout(self, callerDeviceId, callee):
+    def callout(self, callerDeviceId, callee, assertion=False):
         content = {
             'from': {
                 'deviceId': callerDeviceId
@@ -38,6 +38,9 @@ class tas_api:
 
         if status != 201:
             print("ERROR: CallOut was not successful (status '%s')" % str(status))
+            if assertion:
+                exit(-1)
+
             return None
 
         reply = json.loads(body)
@@ -271,7 +274,7 @@ class tas_api:
         return None
 
 
-    def get_party_by_state(self, session_id, state, attempts=10):
+    def get_party_by_state(self, session_id, state, attempts=10, assertion=False):
         for i in range(attempts):
             parties = self.get_full_described_parties(session_id)
 
@@ -281,6 +284,9 @@ class tas_api:
                     return party['id']
 
             time.sleep(1)
+
+        if assertion is True:
+            exit(-1)
 
         return None
 

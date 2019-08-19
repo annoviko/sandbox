@@ -30,7 +30,6 @@ body = api_callee.answer(session_id, callee_party_id, db.softphone1.deviceId)
 
 
 print("\n\nResponse to Answer command:")
-print(body)
 
 input("\n\nPress enter to see session status.")
 

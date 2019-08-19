@@ -3,7 +3,7 @@
 DEMO SCENARIO:
 
 1. Make a call from DL2 to DL1 using REST API CallOut. HardPhone is ringing.
-2. Answer on DL2 using REST API Answer.
+2. Answer on DL1 using REST API Answer.
 3. Park DL2 using REST API Transfer to Park Orbit. DL2 is parked, DL1 is disconnected.
 4. Pickup DL2 using REST API Pickup.
 

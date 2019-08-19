@@ -28,7 +28,5 @@ api_callee = tas_api(db.phone2.accountId, db.phone2.mailboxId)
 
 input("[ACTION REQUIRED] Drop the call on the phone and press ENTER simultaneously.")
 
-print(api_caller.get_session(session_id))
-
 body = api_callee.answer(session_id, callee_party_id, db.phone2.deviceId)
 print(body)

@@ -7,6 +7,8 @@ DEMO SCENARIO:
 
 """
 
+import time
+
 from telapi import tas_api
 from database import db
 
@@ -24,4 +26,6 @@ api_callee = tas_api(db.phone2.accountId, db.phone2.mailboxId)
 response = api_callee.answer(session_id, callee_party_id, db.phone2.deviceId)
 
 print("\n\nAnswer response:")
-print(response)
+
+time.sleep(1)
+print(api_caller.get_session(session_id))
