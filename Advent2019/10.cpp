@@ -11,15 +11,6 @@
 using space_map = std::vector<std::string>;
 
 
-static const double BASE_SPECIFIC_VALUE = std::numeric_limits<double>::max();
-
-static const double POSITIVE_NAN = 10000;
-static const double NEGATIVE_NAN = 11000;
-
-static const double POSITIVE_ZERO = 12000;
-static const double NEGATIVE_ZERO = 13000;
-
-
 struct position {
 public:
     double x = -1;
