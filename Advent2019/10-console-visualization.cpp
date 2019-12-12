@@ -1,3 +1,4 @@
+#include <chrono>
 #include <fstream>
 #include <iostream>
 #include <list>
@@ -5,8 +6,13 @@
 #include <map>
 #include <set>
 #include <string>
+#include <thread>
 #include <vector>
 
+#include <windows.h>
+
+
+using namespace std::chrono_literals;
 
 using space_map = std::vector<std::string>;
 
@@ -46,7 +52,7 @@ public:
 };
 
 
-std::ostream& operator<<(std::ostream& p_stream, const position & p_instance) {
+std::ostream& operator<<(std::ostream& p_stream, const position& p_instance) {
     p_stream << "(" << p_instance.x << ", " << p_instance.y << ")";
     return p_stream;
 }
@@ -72,7 +78,7 @@ private:
     std::size_t m_tolerance;
 
 public:
-    asteroid_detector(const space_map & p_map, const std::size_t m_precision = 5) : 
+    asteroid_detector(const space_map& p_map, const std::size_t m_precision = 5) :
         m_asteroids(extract_asteroids(p_map)),
         m_tolerance(1)
     {
@@ -145,7 +151,7 @@ private:
         return std::sqrt(std::pow(p1.x - p2.x, 2) + std::pow(p1.y - p2.y, 2));
     }
 
-    double calculate_angle(const position & p1, const position & p2) const {
+    double calculate_angle(const position& p1, const position& p2) const {
         double ab = p1.x * p2.x + p1.y * p2.y;
         double a = std::sqrt(std::pow(p1.x, 2) + std::pow(p1.y, 2));
         double b = std::sqrt(std::pow(p2.x, 2) + std::pow(p2.y, 2));
@@ -154,7 +160,7 @@ private:
         return std::round(theta * m_tolerance) / m_tolerance;
     }
 
-    std::list<position> extract_asteroids(const space_map & p_map) {
+    std::list<position> extract_asteroids(const space_map& p_map) {
         std::list<position> result;
 
         for (std::size_t row = 0; row < p_map.size(); row++) {
@@ -170,6 +176,101 @@ private:
 };
 
 
+class visualizer {
+private:
+    space_map   m_map;
+    position    m_laser;
+
+public:
+    visualizer(const position & p_laser) : m_laser(p_laser) { }
+
+public:
+    void destroy_asteroid(const space_map & p_map, const std::size_t x, const std::size_t y) {
+        m_map = p_map;
+
+        draw_laser_line(x, y);
+        m_map[y][x] = 'w';
+        m_map[m_laser.y][m_laser.x] = '@';
+
+        visualize();
+    }
+
+    void show(const space_map& p_map) {
+        m_map = p_map;
+        m_map[m_laser.y][m_laser.x] = '@';
+        visualize();
+    }
+
+private:
+    void visualize() {
+        HANDLE std_handler = GetStdHandle(STD_OUTPUT_HANDLE);
+
+        SetConsoleCursorPosition(std_handler, { 0, 3 });
+
+        for (const auto& row : m_map) {
+            for (const auto symbol : row) {
+                switch (symbol)
+                {
+                case '@':
+                    SetConsoleTextAttribute(std_handler, 0x91);
+                    std::cout << symbol;
+                    SetConsoleTextAttribute(std_handler, 0x08);
+                    break;
+
+                case '*':
+                    SetConsoleTextAttribute(std_handler, 0x0C);
+                    std::cout << symbol;
+                    SetConsoleTextAttribute(std_handler, 0x08);
+                    break;
+
+                case 'w':
+                    SetConsoleTextAttribute(std_handler, 0xCC);
+                    std::cout << symbol;
+                    SetConsoleTextAttribute(std_handler, 0x08);
+                    break;
+
+                case '#':
+                    SetConsoleTextAttribute(std_handler, 0x0F);
+                    std::cout << symbol;
+                    SetConsoleTextAttribute(std_handler, 0x08);
+                    break;
+
+                default:
+                    std::cout << symbol;
+                    break;
+                }
+            }
+            std::cout << std::endl;
+        }
+
+        std::this_thread::sleep_for(25ms);
+    }
+
+    void draw_laser_line(const std::size_t x, const std::size_t y) {
+        double dx = x - m_laser.x;
+        double dy = y - m_laser.y;
+        std::size_t steps = std::sqrt(std::pow(x - m_laser.x, 2) + std::pow(y - m_laser.y, 2));
+
+        double x_step = dx / static_cast<double>(steps);
+        double y_step = dy / static_cast<double>(steps);
+
+        for (std::size_t i = 1; i <= steps; i++) {
+            double xi = m_laser.x + x_step * i;
+            double yi = m_laser.y + y_step * i;
+
+            double rxi = std::round(xi);
+            double ryi = std::round(yi);
+
+            if ((rxi != m_laser.x) || (ryi != m_laser.y)) {
+                if (m_map[ryi][rxi] != '#') {
+                    m_map[ryi][rxi] = '*';
+                }
+            }
+        }
+    }
+};
+
+
 int main() {
     space_map map = read_space_map();
 
@@ -177,33 +278,20 @@ int main() {
     auto result = detector.find_optimal_detection_position();
 
     auto station_position = result.m_position;
-    std::cout << "Optimal position: " << result.m_position << std::endl;
-    std::cout << "Maximum amount of asteroids that can be detected: " << result.m_asteroids.size() << std::endl << std::endl;
 
-    std::cout << "Deploy station..." << std::endl;
-    std::cout << "Start vaporation..." << std::endl << std::endl;
+    visualizer player(station_position);
 
-    position asteroid;
-    std::size_t count = 0;
+    std::cout << std::endl << "        ADVENT OF CODE 2019 - Vaporization by giant laser [10-2]." << std::endl << std::endl;
 
-    while (count < 200) {
+    while (!result.m_asteroids.empty()) {
         for (const auto& pair : result.m_asteroids) {
-            count++;
+            player.destroy_asteroid(map, pair.second.x, pair.second.y);
+
             map[pair.second.y][pair.second.x] = '.';
-
-            if (count == 200) {
-                asteroid = pair.second;
-                break;
-            }
         }
 
-        if (count < 200) {
-            result = detector.detect_asteroids(station_position, map);
-        }
+        result = detector.detect_asteroids(station_position, map);
     }
-
-    std::cout << "200th asteroid: " << asteroid << std::endl;
-    std::cout << "Answer: " << asteroid.x * 100 + asteroid.y << std::endl;
 
     return 0;
 }
