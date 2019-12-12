@@ -141,7 +141,11 @@ public:
     bool detect(const std::vector<satellite>& p_state) {
         m_counter++;
 
-        bool found = check_x(p_state) && check_y(p_state) && check_z(p_state);
+        bool found = true;
+        found &= check_x(p_state);
+        found &= check_y(p_state);
+        found &= check_z(p_state);
+
         return found;
     }
 
@@ -221,7 +225,6 @@ public:
         } while (!detector.detect(m_moons));
 
         auto period = detector.get_period();
-        std::cout << period << std::endl;
         std::size_t result = boost::math::lcm<int64_t>(boost::math::lcm<int64_t>(period.x, period.y), period.z);
         return result;
     }
