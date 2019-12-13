@@ -342,7 +342,7 @@ std::ostream& operator << (std::ostream& p_stream, const tile_type& p_type) {
         break;
         
     case tile_type::horizontal_paddle:
-        p_stream << '-';
+        p_stream << 'T';
         break;
 
     case tile_type::ball:
@@ -482,8 +482,8 @@ private:
             break;
 
         case tile_type::horizontal_paddle:
-            SetConsoleTextAttribute(m_cout, 0x09);
-            std::cout << '_';
+            SetConsoleTextAttribute(m_cout, 0x99);
+            std::cout << 'T';
             SetConsoleTextAttribute(m_cout, 0x08);
             break;
 
@@ -679,7 +679,6 @@ private:
 
 
 int main() {
-    getchar();
     integer_computer<int64_t> computer;
     arcade_cabinet free_game(computer, true);
 
