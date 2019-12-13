@@ -193,6 +193,7 @@ public:
         m_map[m_laser.y][m_laser.x] = '@';
 
         visualize();
+        animate_explosion(x, y);
     }
 
     void show(const space_map& p_map) {
@@ -202,10 +203,30 @@ public:
     }
 
 private:
+    void animate_explosion(const std::size_t x, const std::size_t y) {
+        update_cell(x, y, 0xFF, ' ');
+        std::this_thread::sleep_for(30ms);
+
+        update_cell(x, y, 0xBB, ' ');
+        std::this_thread::sleep_for(5ms);
+
+        update_cell(x, y, 0x08, '.');
+        std::this_thread::sleep_for(20ms);
+    }
+
+    void update_cell(const short x, const short y, const uint8_t p_code, const char p_sym) {
+        HANDLE std_handler = GetStdHandle(STD_OUTPUT_HANDLE);
+
+        SetConsoleCursorPosition(std_handler, { x, y + 4 });
+        SetConsoleTextAttribute(std_handler, p_code);
+        std::cout << p_sym;
+        SetConsoleTextAttribute(std_handler, 0x08);
+    }
+
     void visualize() {
         HANDLE std_handler = GetStdHandle(STD_OUTPUT_HANDLE);
 
-        SetConsoleCursorPosition(std_handler, { 0, 3 });
+        SetConsoleCursorPosition(std_handler, { 0, 4 });
 
         for (const auto& row : m_map) {
             for (const auto symbol : row) {
@@ -242,8 +263,6 @@ private:
             }
             std::cout << std::endl;
         }
-
-        std::this_thread::sleep_for(25ms);
     }
 
     void draw_laser_line(const std::size_t x, const std::size_t y) {
@@ -292,6 +311,11 @@ int main() {
 
         result = detector.detect_asteroids(station_position, map);
     }
+
+    HANDLE std_handler = GetStdHandle(STD_OUTPUT_HANDLE);
+    SetConsoleCursorPosition(std_handler, { static_cast<short>(0), static_cast<short>(map.size() + 4) });
+    SetConsoleTextAttribute(std_handler, 0x0F);
+    std::cout << std::endl << "                     ALL ASTEROIDS ARE VAPORIZED!" << std::endl;
 
     return 0;
 }
