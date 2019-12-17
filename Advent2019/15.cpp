@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <cstdint>
 #include <fstream>
+#include <functional>
 #include <iostream>
 #include <list>
 #include <map>
@@ -318,7 +319,6 @@ struct maze_object {
 
     type    m_type      = type::unknown;
     bool    m_visited   = false;
-    bool    m_traversed = false;
 };
 
 
@@ -355,7 +355,8 @@ enum class direction {
     north = 1,
     south,
     west,
-    east
+    east,
+    none
 };
 
 
@@ -376,85 +377,69 @@ private:
     bool m_found = false;
 
 public:
-    std::size_t find_oxygen_system() {
-        m_map[m_current.y][m_current.x] = { maze_object::type::empty, false };
-        while (!m_found) {
-            make_step();
-        }
+    void explore() {
+        m_map[m_current.y][m_current.x] = { maze_object::type::empty, true };
+        explore(direction::none);
+    }
 
-        return find_optimal_steps();
+    std::size_t find_optimal_distance_to_oxygen_system() {
+        reset_visit_marks();
+        return find_optimal_steps({ 0, 0 }, [](maze_object& p_cell) { return p_cell.m_type == maze_object::type::oxygen_system; });
+    }
+
+    std::size_t find_time_to_fill_by_oxygen() {
+        reset_visit_marks();
+        return find_optimal_steps(m_final, [](maze_object& p_cell) { return false; });
     }
 
 private:
-    void make_step() {
-        turn_right(); /* turn right */
-        while (!execute()) { /* and try to go */
-            turn_left();    /* if can't than turn left */
+    void explore(const direction p_dir) {
+        if (!execute(p_dir)) { return; }
+
+        for (std::int64_t i = 1; i <= 4; i++) {
+            auto next_dir = static_cast<direction>(i);
+            auto next_pos = get_next_position(m_current, next_dir);
+
+            if (!m_map[next_pos.y][next_pos.x].m_visited) {
+                explore(next_dir);
+            }
+        }
+
+        execute(get_oposite(p_dir));
+    }
+
+    void reset_visit_marks() {
+        for (auto& row : m_map) {
+            for (auto& pair : row.second) {
+                pair.second.m_visited = false;
+            }
         }
     }
 
     direction get_oposite(const direction& p_dir) {
-        switch (m_dir) {
+        switch (p_dir) {
         case direction::north:
-            m_dir = direction::south;
-            break;
+            return direction::south;
         case direction::east:
-            m_dir = direction::west;
-            break;
+            return direction::west;
         case direction::south:
-            m_dir = direction::north;
-            break;
+            return direction::north;
         case direction::west:
-            m_dir = direction::east;
-            break;
+            return direction::east;
+        case direction::none:
+            return direction::none;
         default:
             throw std::exception("Error: Incorrect state of direction.");
         }
     }
 
-    void turn_right() {
-        switch (m_dir) {
-        case direction::north:
-            m_dir = direction::east;
-            break;
-        case direction::east:
-            m_dir = direction::south;
-            break;
-        case direction::south:
-            m_dir = direction::west;
-            break;
-        case direction::west:
-            m_dir = direction::north;
-            break;
-        default:
-            throw std::exception("Error: Incorrect state of direction.");
-        }
-    }
+    bool execute(const direction p_dir) {
+        if (p_dir == direction::none) { return true; }
 
-    void turn_left() {
-        switch (m_dir) {
-        case direction::north:
-            m_dir = direction::west;
-            break;
-        case direction::west:
-            m_dir = direction::south;
-            break;
-        case direction::south:
-            m_dir = direction::east;
-            break;
-        case direction::east:
-            m_dir = direction::north;
-            break;
-        default:
-            throw std::exception("Error: Incorrect state of direction.");
-        }
-    }
-
-    bool execute() {
-        m_computer.get_input().push_back(static_cast<int64_t>(m_dir));
+        m_computer.get_input().push_back(static_cast<int64_t>(p_dir));
         auto result = run_integer_computer();
 
-        auto next_position = get_next_position(m_current, m_dir);
+        auto next_position = get_next_position(m_current, p_dir);
         auto& cell = m_map[next_position.y][next_position.x];
         if (cell.m_type == maze_object::type::unknown) {
             update_maze_info(next_position, result, cell);
@@ -505,6 +490,7 @@ private:
             throw std::exception("Error: Incorrect response from integer computer.");
         }
 
+        cell.m_visited = true;
         update_borders(next_position);
     }
 
@@ -538,50 +524,70 @@ private:
         }
     }
 
-    std::size_t find_optimal_steps() {
-        std::size_t result = 0;
+    void show_oxygen() {
+        std::cout << std::endl << std::endl;
+        for (auto row = y_min; row <= y_max; row++) {
+            for (auto col = x_min; col <= x_max; col++) {
+                auto& cell = m_map[row][col];
+                if (cell.m_visited && (cell.m_type == maze_object::type::empty || cell.m_type == maze_object::type::oxygen_system)) {
+                    std::cout << "O";
+                }
+                else {
+                    std::cout << cell;
+                }
+            }
+            std::cout << std::endl;
+        }
+    }
 
-        std::list<position> cur_level;
-        std::list<position> next_level;
+    std::size_t find_optimal_steps(const position & p_initial, const std::function<bool(maze_object &)> & p_stop_condition) {
+        const bool visit_mark = !m_map[m_current.y][m_current.x].m_visited;
 
-        next_level.push_back({ 0, 0 });
-        m_map[0][0].m_traversed = true;
+        std::size_t steps = 0;
+        std::list<position> cur_level, next_level;
+
+        next_level.push_back(p_initial);
+        m_map[p_initial.y][p_initial.x].m_visited = visit_mark;
 
         while (!next_level.empty()) {
             cur_level = std::move(next_level);
-            result++;
 
             for (auto & cur_pos : cur_level) {
                 for (std::size_t i = 1; i <= 4; i++) {
-                    auto dir = static_cast<direction>(i);
-                    auto pos = get_next_position(cur_pos, dir);
-
+                    auto pos = get_next_position(cur_pos, static_cast<direction>(i));
                     auto& cell = m_map[pos.y][pos.x];
 
-                    if (cell.m_traversed) {
-                        continue;
-                    }
+                    if (cell.m_visited == visit_mark) { continue; }
 
-                    cell.m_traversed = true;
+                    cell.m_visited = visit_mark;
+                    if (p_stop_condition(cell)) { return steps + 1; }   /* append current step */
 
-                    if (cell.m_type == maze_object::type::empty) {
+                    if (cell.m_type == maze_object::type::empty || cell.m_type == maze_object::type::oxygen_system) {
                         next_level.push_back(pos);
-                    }
-                    else if (cell.m_type == maze_object::type::oxygen_system) {
-                        return result;
                     }
                 }
             }
+
+            if (!next_level.empty()) {
+                steps++;
+            }
         }
 
-        return result;
+        return steps;
     }
 };
 
 
 int main() {
     robot repair_robot;
-    auto steps = repair_robot.find_oxygen_system();
+
+    repair_robot.explore();
+
+    auto steps = repair_robot.find_optimal_distance_to_oxygen_system();
     std::cout << "Optimal amount of steps: " << steps << std::endl;
+
+    auto time = repair_robot.find_time_to_fill_by_oxygen();
+    std::cout << "Time to fill the spaceship by oxygen: " << time << std::endl;
+
     return 0;
 }
