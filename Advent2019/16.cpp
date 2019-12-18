@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <fstream>
 #include <iostream>
 #include <vector>
@@ -22,21 +23,10 @@ std::vector<long> read_signal() {
 }
 
 
-class pattern_builder {
-private:
-    const std::vector<long> basic_pattern = { 0, 1, 0, -1 };
-    std::size_t m_repeat = 1;
-
-public:
-    pattern_builder() { }
-
-public:
-    void next() { m_repeat++; }
-
-    long get_value(std::size_t p_index_value) {
-        const std::size_t index = ((p_index_value + 1) / m_repeat) % basic_pattern.size();
-        return basic_pattern[index];
-    }
+struct segment {
+    long left_border = -1;
+    long right_border = -1;
+    long length = -1;
 };
 
 
@@ -52,35 +42,71 @@ public:
     { }
 
 public:
-    std::vector<long> process(const std::size_t p_steps, const std::size_t p_offset = 0) {
+    std::vector<long> process(const std::size_t p_steps) {
         for (std::size_t i = 0; i < p_steps; i++) {
             std::cout << "Step " << i << std::endl;
-            calculate_output(p_offset);
+            calculate_output();
         }
 
         return m_signal;
     }
 
 private:
-    void calculate_output(const std::size_t p_offset) {
-        pattern_builder builder;
-        for (std::size_t i = p_offset; i < m_signal.size(); i++) {
-            long value = calculate_value(builder, i, m_signal);
-            m_signal[i] = value;
-            builder.next();
-        }
-    }
+    void calculate_output() {
+        std::vector<long> result(m_signal.size(), 0);
 
-    long calculate_value(pattern_builder & builder, const std::size_t p_offset, const std::vector<long>& p_signal) {
-        long result = 0;
+        long middle = std::floor(m_signal.size() / 2);
 
-        for (std::size_t i = p_offset; i < p_signal.size(); i++) {
-            long pattern_value = builder.get_value(i);
-            long value = pattern_value * p_signal[i];
-            result += value;
+        std::vector<long> cm(m_signal.size(), 0);
+        std::vector<segment> borders(m_signal.size());
+
+        for (long i = m_signal.size() - 1; i >= middle; i--) {
+            cm[0] = cm[0] + (m_signal[i] % 10);
+            result[i] = std::abs(cm[0] % 10);
         }
 
-        return abs(result) % 10;
+        borders[0].left_border = middle;
+        borders[0].right_border = m_signal.size() - 1;
+
+        for (long i = middle - 1; i >= 0; i--) {
+            long sign = 1;
+            long repeat = i + 1;
+
+            for (long index_cm = 0; index_cm < cm.size(); index_cm += 2, sign *= -1) {
+                long new_left_border = i + repeat * index_cm;
+                long new_right_border = std::min(new_left_border + repeat - 1, (long)m_signal.size() - 1);
+
+                if (new_left_border >= m_signal.size()) {
+                    break;
+                }
+
+                long amount_to_add = std::min(std::min(repeat, index_cm + 1), new_right_border - new_left_border + 1);
+
+                for (long index_value = new_left_border; index_value < new_left_border + amount_to_add; index_value++) {
+                    cm[index_cm] += sign * (m_signal[index_value] % 10);
+                }
+
+                long prev_left_border = borders[index_cm].left_border;
+                long prev_right_border = borders[index_cm].right_border;
+
+                long remove_border = std::max(new_right_border + 1, prev_left_border);
+
+                if (prev_left_border != -1) {
+                    for (long index_to_remove = remove_border; index_to_remove <= prev_right_border; index_to_remove++) {
+                        cm[index_cm] -= sign * (m_signal[index_to_remove] % 10);
+                    }
+                }
+
+                borders[index_cm].left_border = new_left_border;
+                borders[index_cm].right_border = new_right_border;
+
+                result[i] += cm[index_cm];
+            }
+            
+            result[i] = std::abs(result[i] % 10);
+        }
+
+        m_signal = std::move(result);
     }
 };
 
@@ -106,8 +132,8 @@ int main() {
     std::cout << std::endl << std::endl;
 
 
-#if 1
-    long offset = 0;
+
+    std::size_t offset = 0;
     for (std::size_t i = 0; i < 7; i++) {
         offset *= 10;
         offset += signal[i];
@@ -117,7 +143,7 @@ int main() {
 
     std::cout << "Prepare real signal." << std::endl;
     std::vector<long> real_signal;
-    real_signal.reserve(signal.size());
+    real_signal.reserve(signal.size() * 10000);
 
     for (std::size_t repeat = 0; repeat < 10000; repeat++) {
         for (auto& value : signal) {
@@ -125,17 +151,22 @@ int main() {
         }
     }
 
-    std::cout << "Signal size: " << real_signal.size() << ", Length to analyse: " << real_signal.size() - offset << std::endl;
+    std::cout << "Prepare message." << std::endl;
+    std::vector<long> message;
+    message.reserve(real_signal.size() - offset);
+    for (std::size_t i = offset; i < real_signal.size(); i++) {
+        message.push_back(real_signal[i]);
+    }
 
     std::cout << "Run encoding." << std::endl;
-    result = fft(real_signal).process(100, offset);
+    result = fft(real_signal).process(100);
 
     std::cout << "The eight-digit message embedded in the final output list: ";
-    for (std::size_t i = offset; i < static_cast<std::size_t>(offset) + 8; i++) {
+    for (std::size_t i = offset; i < (offset + 8); i++) {
         std::cout << result.at(i);
     }
     std::cout << std::endl << std::endl;
-#endif
+
 
     return 0;
 }
