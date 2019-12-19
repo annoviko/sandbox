@@ -42,17 +42,17 @@ public:
     { }
 
 public:
-    std::vector<long> process(const std::size_t p_steps) {
+    std::vector<long> process(const std::size_t p_steps, const std::size_t p_offset = 0) {
         for (std::size_t i = 0; i < p_steps; i++) {
             std::cout << "Step " << i << std::endl;
-            calculate_output();
+            calculate_output(p_offset);
         }
 
         return m_signal;
     }
 
 private:
-    void calculate_output() {
+    void calculate_output(const std::size_t p_offset) {
         std::vector<long> result(m_signal.size(), 0);
 
         long middle = std::floor(m_signal.size() / 2);
@@ -60,7 +60,7 @@ private:
         std::vector<long> cm(m_signal.size(), 0);
         std::vector<segment> borders(m_signal.size());
 
-        for (long i = m_signal.size() - 1; i >= middle; i--) {
+        for (long i = m_signal.size() - 1; i >= middle && i >= p_offset; i--) {
             cm[0] = cm[0] + (m_signal[i] % 10);
             result[i] = std::abs(cm[0] % 10);
         }
@@ -68,7 +68,7 @@ private:
         borders[0].left_border = middle;
         borders[0].right_border = m_signal.size() - 1;
 
-        for (long i = middle - 1; i >= 0; i--) {
+        for (long i = middle - 1; i >= 0 && i >= p_offset; i--) {
             long sign = 1;
             long repeat = i + 1;
 
@@ -102,7 +102,7 @@ private:
 
                 result[i] += cm[index_cm];
             }
-            
+
             result[i] = std::abs(result[i] % 10);
         }
 
@@ -151,15 +151,8 @@ int main() {
         }
     }
 
-    std::cout << "Prepare message." << std::endl;
-    std::vector<long> message;
-    message.reserve(real_signal.size() - offset);
-    for (std::size_t i = offset; i < real_signal.size(); i++) {
-        message.push_back(real_signal[i]);
-    }
-
     std::cout << "Run encoding." << std::endl;
-    result = fft(real_signal).process(100);
+    result = fft(real_signal).process(100, offset);
 
     std::cout << "The eight-digit message embedded in the final output list: ";
     for (std::size_t i = offset; i < (offset + 8); i++) {
