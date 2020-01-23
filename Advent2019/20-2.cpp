@@ -144,6 +144,14 @@ public:
         return m_entrances[p_pos.y][p_pos.x]->enter(p_pos);
     }
 
+    bool is_outer(const position& p_pos) {
+        if (p_pos.x - 2 == 0) { return true; }
+        if (p_pos.x + 2 == m_map.front().size() - 1) { return true; }
+        if (p_pos.y - 2 == 0) { return true; }
+        if (p_pos.y + 2 == m_map.size() - 1) { return true; }
+        return false;
+    }
+
     void print() {
         for (auto& elem : m_portals) {
             std::cout << elem.second->get_id() << std::endl;
@@ -279,6 +287,8 @@ public:
     std::vector<std::vector<bool>> m_visited;
 
 public:
+    maze_context() = default;
+
     maze_context(const std::size_t p_rows, const std::size_t p_cols) :
         m_visited(p_rows, std::vector<bool>(p_cols, false))
     { }
@@ -288,28 +298,13 @@ public:
 struct cursor_context {
 public:
     position m_position;
-    std::set<std::string> m_portals;
+    int m_level;
 
 public:
-    cursor_context(const position& p_position, const std::set<std::string>& p_portals) :
+    cursor_context(const position& p_position, const int p_level) :
         m_position(p_position),
-        m_portals(p_portals)
+        m_level(p_level)
     { }
-
-public:
-    std::size_t get_level() const {
-        return m_portals.size();
-    }
-
-    void visit(const std::string& p_portal_id) {
-        auto iter = m_portals.find(p_portal_id);
-        if (iter != m_portals.end()) {
-            m_portals.erase(iter);
-        }
-        else {
-            m_portals.insert(p_portal_id);
-        }
-    }
 };
 
 
@@ -335,14 +330,17 @@ public:
         std::list<cursor_context> current_movement;
         std::list<cursor_context> next_movement;
 
-        next_movement.push_back({ m_portals.get_start(), { } });
-        m_context[next_movement.front().get_level()].m_visited[next_movement.front().m_position.y][next_movement.front().m_position.x] = true;
+        next_movement.push_back({ m_portals.get_start(), 0 });
+        m_context[next_movement.front().m_level].m_visited[next_movement.front().m_position.y][next_movement.front().m_position.x] = true;
 
         while (!next_movement.empty()) {
             for (auto& cur : next_movement)
             {
+                //print(cur);
+                //std::getchar();
+
                 /* check if we reach the finish */
-                if ((cur.get_level() == 0) && (m_portals.get_finish() == cur.m_position)) {
+                if ((cur.m_level == 0) && (m_portals.get_finish() == cur.m_position)) {
                     return length;
                 }
 
@@ -350,17 +348,20 @@ public:
                 if (m_portals.is_entrance(cur.m_position)) {
                     position gate_position = m_portals.go_through_entrance(cur.m_position);
 
+                    /* get level after going through the entrance */
+                    const int next_maze_level = m_portals.is_outer(cur.m_position) ? cur.m_level - 1 : cur.m_level + 1;
+
                     /* check if we were there before */
-                    cursor_context candidate_context = { gate_position, cur.m_portals };
-                    candidate_context.visit(m_portals.get_portal(cur.m_position)->get_id());
+                    cursor_context candidate_context = { gate_position, next_maze_level };
 
                     /* check if there is no level that may appear */
-                    if (candidate_context.get_level() >= m_context.size()) {
-                        m_context.push_back({ m_map.size(), m_map.front().size() });
-                        m_context[candidate_context.get_level()].m_visited[candidate_context.m_position.y][candidate_context.m_position.x] = true;
-                    }
+                    if (next_maze_level >= 0) {
+                        if (next_maze_level == m_context.size()) {
+                            m_context.push_back(maze_context(m_map.size(), m_map.front().size()));
+                        }
 
-                    append_position_if_acceptable(candidate_context, current_movement);
+                        append_position_if_acceptable(candidate_context, current_movement);
+                    }
                 }
 
                 /* append non-portal ways */
@@ -376,21 +377,25 @@ public:
 
 private:
     void get_valid_next_positions(const cursor_context& p_cur, std::list<cursor_context> & p_next_movement) {
-        append_position_if_acceptable(cursor_context({ p_cur.m_position.x - 1, p_cur.m_position.y }, { }), p_next_movement);
-        append_position_if_acceptable(cursor_context({ p_cur.m_position.x + 1, p_cur.m_position.y }, { }), p_next_movement);
-        append_position_if_acceptable(cursor_context({ p_cur.m_position.x, p_cur.m_position.y - 1 }, { }), p_next_movement);
-        append_position_if_acceptable(cursor_context({ p_cur.m_position.x, p_cur.m_position.y + 1 }, { }), p_next_movement);
+        append_position_if_acceptable(cursor_context({ p_cur.m_position.x - 1, p_cur.m_position.y }, p_cur.m_level), p_next_movement);
+        append_position_if_acceptable(cursor_context({ p_cur.m_position.x + 1, p_cur.m_position.y }, p_cur.m_level), p_next_movement);
+        append_position_if_acceptable(cursor_context({ p_cur.m_position.x, p_cur.m_position.y - 1 }, p_cur.m_level), p_next_movement);
+        append_position_if_acceptable(cursor_context({ p_cur.m_position.x, p_cur.m_position.y + 1 }, p_cur.m_level), p_next_movement);
     }
 
-    void append_position_if_acceptable(const cursor_context& p_candidate, std::list<cursor_context>& p_next_movement) {
+    bool append_position_if_acceptable(const cursor_context& p_candidate, std::list<cursor_context>& p_next_movement) {
+        bool result = false;
+
         if (is_valid_position(p_candidate)) {
             p_next_movement.push_back(p_candidate);
+            result = true;
         }
 
-        const std::size_t maze_level = p_candidate.get_level();
+        const int maze_level = p_candidate.m_level;
         auto& maze_level_context = m_context[maze_level];
 
         maze_level_context.m_visited[p_candidate.m_position.y][p_candidate.m_position.x] = true;
+        return result;
     }
 
     bool is_valid_position(const cursor_context& p_cursor) {
@@ -402,7 +407,7 @@ private:
             return false;
         }
 
-        const std::size_t maze_level = p_cursor.get_level();
+        const int maze_level = p_cursor.m_level;
         const auto& maze_level_context = m_context[maze_level];
         if (maze_level_context.m_visited[p_cursor.m_position.y][p_cursor.m_position.x]) {
             return false;
@@ -413,6 +418,24 @@ private:
         }
 
         return false;
+    }
+
+    void print(const cursor_context& p_cursor) {
+        std::cout << "Level: " << p_cursor.m_level << std::endl << std::endl;
+        for (std::size_t y = 0; y < m_map.size(); y++) {
+            for (std::size_t x = 0; x < m_map.at(y).size(); x++) {
+                if ((m_context[p_cursor.m_level].m_visited[y][x] == true) && (m_map[y][x] == '.')) {
+                    std::cout << '@';
+                }
+                else {
+                    std::cout << m_map[y][x];
+                }
+            }
+
+            std::cout << std::endl;
+        }
+
+        std::cout << std::endl << std::endl << std::endl;
     }
 };
 
