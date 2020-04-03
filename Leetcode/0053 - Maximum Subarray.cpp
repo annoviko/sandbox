@@ -1,27 +1,23 @@
+#include <iostream>
+
 class Solution {
 public:
-    int maxSubArray(std::vector<int>& nums) {
-        if (nums.empty()) { return 0; }
-        
-        int previous = nums[0];
-        int result = previous;
-        
-        for (std::size_t i = 1; i < nums.size(); i++) {
-            int current = nums[i];
-            
-            // check if result can be better
-            if (previous > 0) {
-                current += previous;
+    int maxSubArray(const std::vector<int> & nums) {
+        int maximum = nums[0];
+        int current = nums[0];
+
+        for (int i = 1; i < nums.size(); i++) {
+            const int value = nums[i];
+            current += value;
+            if (current < value) {
+                current = value;        // sum already less than current value, then reset it
             }
-            
-            // update if much better result is appeared
-            if (current > result) {
-                result = current;
+
+            if (current > maximum) {
+                maximum = current;
             }
-            
-            previous = current;
         }
-        
-        return result;
+
+        return maximum;
     }
 };
