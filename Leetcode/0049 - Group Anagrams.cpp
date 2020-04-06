@@ -1,50 +1,66 @@
+#include <vector>
+#include <string>
+#include <unordered_map>
+#include <algorithm>
+
+
 class Solution {
 public:
-    std::vector<std::vector<std::string>> groupAnagrams(std::vector<std::string>& strs) {
-        std::vector<std::unordered_map<char, int>> anagram_former;
-        std::vector<std::vector<std::string>> results;
+#if defined(HASH_PATTERNS)
+    std::vector<std::vector<std::string>> groupAnagrams(const std::vector<std::string>& strs) {
+        std::vector<std::vector<std::string>> result = { };
+        std::vector<std::unordered_map<char, int>> patterns;
 
-        for (const auto & word : strs) {
-            std::unordered_map<char, int> word_former;
-            for (const auto symbol : word) {
-                if (word_former.find(symbol) == word_former.cend()) {
-                    word_former[symbol] = 1;
-                }
-                else {
-                    word_former[symbol]++;
+        for (const auto & value : strs) {   // O(N)
+            std::unordered_map<char, int> pattern;
+            for (const char sym : value) {  // O(K)
+                pattern[sym]++;
+            }
+
+            bool found = false;
+            for (std::size_t i = 0; i < result.size(); i++) {   // O(N)
+                if ((patterns[i].size() == pattern.size()) && (patterns[i] == pattern)) {
+                    result[i].push_back(value);
+                    found = true;
+                    break;
                 }
             }
 
-            bool found_anagram = false;
-            for (std::size_t i = 0; i < anagram_former.size(); i++) {
-                const auto & other_former = anagram_former[i];
-
-                if (other_former.size() != word_former.size()) {
-                    continue;
-                }
-
-                bool suitable_former = true;
-                for (const auto & symbol : word_former) {
-                    const auto other_symbol = other_former.find(symbol.first);
-                    if (other_symbol == other_former.cend() || other_symbol->second != symbol.second) {
-                        suitable_former = false;
-                        break;
-                    }
-                }
-
-                if (suitable_former) {
-                  found_anagram = true;
-                  results[i].push_back(word);
-                  break;
-                }
-            }
-
-            if (!found_anagram) {
-                anagram_former.push_back(std::move(word_former));
-                results.push_back({ word });
+            if (!found) {
+                result.push_back({ value });
+                patterns.push_back(std::move(pattern));
             }
         }
 
-        return results;
+        // Total O(N^2)
+
+        return result;
     }
+#else
+    std::vector<std::vector<std::string>> groupAnagrams(const std::vector<std::string>& strs) {
+        std::unordered_map<std::string, std::vector<std::string>> hash_groups;
+        for (const auto & value : strs) {   // O(N)
+            std::vector<int> counter(26, 0);
+            for (const char sym : value) {  // O(K)
+                counter[sym - 'a']++;
+            }
+
+            std::string hash;
+            for (const int counter_value : counter) {   // O(K)
+                hash += "#" + std::to_string(counter_value);
+            }
+
+            hash_groups[hash].push_back(value);     // O(1)
+        }
+
+        // Total O(KN)
+
+        std::vector<std::vector<std::string>> result;
+        for (auto & group : hash_groups) {
+            result.push_back(std::move(group.second));
+        }
+
+        return result;
+    }
+#endif
 };
