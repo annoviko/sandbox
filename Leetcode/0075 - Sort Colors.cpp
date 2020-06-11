@@ -1,57 +1,35 @@
 class Solution {
 public:
     void sortColors(std::vector<int>& nums) {
-#if defined(QUICKSORT_SOLUTION)
-        quicksort(nums, 0, nums.size() - 1);
-#else
-        optimalSort(nums);
-#endif
+        onePassSort(nums);
     }
 
-    void optimalSort(std::vector<int> & nums) {
-        int low = 0;
-        int high = nums.size() - 1;
-        int mid = 0;
+    void onePassSort(std::vector<int>& nums) {
+        std::size_t idx0 = 0;                    // idx0++
+        std::size_t idx2 = nums.size();          // --idx2
 
-        while (mid <= high) {
-            if (nums[mid] == 0) {
-                std::swap(nums[mid], nums[low]);
-                low++;
-                mid++;
+        for (long long i = 0; i < idx2; i++) {
+            if (nums[i] == 0) {
+                std::swap(nums[i], nums[idx0++]);
             }
-            else if (nums[mid] == 1) {
-                mid++;
-            }
-            else if (nums[mid] == 2) {
-                std::swap(nums[mid], nums[high]);
-                high--;
+            else if (nums[i] == 2) {
+                std::swap(nums[i--], nums[--idx2]);
             }
         }
     }
 
-#if defined(QUICKSORT_SOLUTION)
-    void quicksort(std::vector<int> & nums, int lborder, int rborder) {
-        if (lborder >= rborder) { return; }
-        
-        int position = partition(nums, lborder, rborder);
-        quicksort(nums, lborder, position - 1);
-        quicksort(nums, position + 1, rborder);
-    }
-    
-    int partition(std::vector<int> & nums, int lborder, int rborder) {
-        int pivot = nums[rborder];
-        int lpos = lborder;
-        
-        for (int i = lborder; i < rborder; i++) {
-            if (nums[i] < pivot) {
-                std::swap(nums[i], nums[lpos]);
-                lpos++;
+    void countSort(std::vector<int>& nums) {
+        std::vector<int> counter(3);
+        for (auto color : nums) {
+            counter[color]++;
+        }
+
+        std::size_t cursor = 0;
+        for (std::size_t i = 0; i < counter.size(); i++) {
+            while (counter[i] > 0) {
+                nums[cursor++] = i;
+                counter[i]--;
             }
         }
-        
-        std::swap(nums[rborder], nums[lpos]);
-        
-        return lpos;
     }
-#endif
 };
