@@ -114,7 +114,7 @@ private:
             m_forward_table.insert({ p_node_name, dest_node });
             m_backward_table.insert({ dest_node.m_name, { p_node_name, 0 } });
 
-            dest_position = comma_position + 2; /* coma + space */
+            dest_position = comma_position + 2; /* comma + space */
             comma_position = p_destination.find(',', dest_position);
         }
 
