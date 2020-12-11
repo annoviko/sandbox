@@ -1,10 +1,8 @@
-#include <algorithm>
 #include <fstream>
 #include <functional>
 #include <iostream>
 #include <vector>
 #include <string>
-#include <unordered_set>
 
 
 using seats_map = std::vector<std::string>;
