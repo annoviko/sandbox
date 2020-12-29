@@ -175,6 +175,12 @@ struct position {
 };
 
 
+struct neighbor_descriptor {
+    position m_pos;
+    e_border m_border;
+};
+
+
 class tile_matcher {
 private:
     enum e_instruction { NOP, ROTATE, FLIP };
@@ -185,6 +191,7 @@ private:
 
     std::list<tile::ptr> m_not_placed_tiles;
 
+    /*                                                   0     90      180    270     0      90      180     270     */
     const std::vector<e_instruction> m_instructions = { NOP, ROTATE, ROTATE, ROTATE, FLIP, ROTATE, ROTATE, ROTATE };
 
 public:
@@ -192,6 +199,8 @@ public:
         auto initial = *p_seq.begin();
         initial->m_i = 0;
         initial->m_j = 0;
+
+        m_map[initial->m_i][initial->m_j] = initial;
 
         for (auto iter = std::next(p_seq.begin()); iter != p_seq.end(); iter++) {
             m_not_placed_tiles.push_back(*iter);
@@ -222,6 +231,10 @@ public:
                 to_consider.push_back(neighbor);
                 assign_neighbor(current, border_id, neighbor);
                 amount_neighbors++;
+
+                std::cout << "After Iteration:" << std::endl;
+                print();
+                std::cout << std::endl;
             }
 
             if (amount_neighbors < 2) {
@@ -234,7 +247,7 @@ public:
         for (int i = m_lower; i <= m_upper; i++) {
             for (int j = m_left; j <= m_right; j++) {
                 auto current = m_map[i][j];
-                std::cout << ((current != nullptr) ? current->m_id : -1) << " ";
+                std::cout << ((current != nullptr) ? current->m_id : 0) << " ";
             }
             std::cout << std::endl;
         }
@@ -279,12 +292,12 @@ private:
             p_neighbor->m_i = p_current->m_i;
             p_neighbor->m_j = p_current->m_j + 1;
 
-            m_right = std::min(p_neighbor->m_j, m_right);
+            m_right = std::max(p_neighbor->m_j, m_right);
 
             break;
 
         default:
-            break;
+            //throw std::exception("Unexpected border type.");
         }
     }
 
@@ -344,12 +357,92 @@ private:
     }
 
 
-    std::list<position> get_candidate_neighbors(const tile::ptr & p_current, const e_border p_border_id, const tile::ptr & p_cadidante) {
-        return { };
+    position get_candidate_position(const tile::ptr & p_current, const e_border p_border_id, const tile::ptr & p_cadidante) {
+        position result;
+
+        switch (p_border_id) {
+        case e_border::UPPER:
+            result = { p_current->m_i - 1, p_current->m_j };
+            break;
+
+        case e_border::RIGHT:
+            result = { p_current->m_i, p_current->m_j + 1 };
+            break;
+
+        case e_border::LOWER:
+            result = { p_current->m_i + 1, p_current->m_j };
+            break;
+
+        case e_border::LEFT:
+            result = { p_current->m_i, p_current->m_j - 1 };
+            break;
+
+        default:
+            throw std::exception("Unexpected border type.");
+        }
+
+        return result;
     }
 
 
-    bool is_matched_with_neighbors(const tile::ptr & p_cadidante, const std::list<position> & candidate_neigbors) {
+    e_border get_opposite_border(const e_border p_border_id) {
+        switch (p_border_id) {
+        case e_border::LEFT: return e_border::RIGHT;
+        case e_border::RIGHT: return e_border::LEFT;
+        case e_border::UPPER: return e_border::LOWER;
+        case e_border::LOWER: return e_border::UPPER;
+        default: throw std::exception("Unexpected border type.");
+        }
+    }
+
+
+    std::list<neighbor_descriptor> get_candidate_neighbors(const tile::ptr & p_current, const e_border p_border_id, const tile::ptr & p_cadidante) {
+        std::list<neighbor_descriptor> result;
+
+        e_border candidate_atteched_border = get_opposite_border(p_border_id);
+        position candidate_position = get_candidate_position(p_current, p_border_id, p_cadidante);
+        for (std::size_t i = 0; i < 4; i++) {
+            e_border candidate_border = (e_border)i;
+
+            if (candidate_atteched_border == candidate_border) {
+                continue;   /* do not consider attached border neighbor - it is matching */
+            }
+
+            switch (candidate_border) {
+            case e_border::UPPER:
+                result.push_back({ { candidate_position.m_i - 1, candidate_position.m_j }, e_border::UPPER });
+                break;
+
+            case e_border::LOWER:
+                result.push_back({ { candidate_position.m_i + 1, candidate_position.m_j }, e_border::LOWER });
+                break;
+
+            case e_border::LEFT:
+                result.push_back({ { candidate_position.m_i, candidate_position.m_j - 1 }, e_border::LEFT });
+                break;
+
+            case e_border::RIGHT:
+                result.push_back({ { candidate_position.m_i, candidate_position.m_j + 1 }, e_border::RIGHT });
+                break;
+            }
+        }
+
+        return result;
+    }
+
+
+    bool is_matched_with_neighbors(const tile::ptr & p_cadidante, const std::list<neighbor_descriptor> & candidate_neigbors) {
+        for (auto & neighbor : candidate_neigbors) {
+            auto neighbor_tile = m_map[neighbor.m_pos.m_i][neighbor.m_pos.m_j];
+            if (neighbor_tile == nullptr) {
+                continue;
+            }
+
+            if (!is_match(p_cadidante, neighbor.m_border, neighbor_tile)) {
+                return false;
+            }
+        }
+
         return true;
     }
 
