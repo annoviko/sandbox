@@ -211,7 +211,7 @@ public:
         }
 
 #if defined(DEBUG_PRINT)
-        print_image();
+        print_image_with_borders();
 #endif
 
         std::list<tile::ptr> to_consider = { initial };
@@ -242,7 +242,7 @@ public:
 
 #if defined(DEBUG_PRINT)
                 std::cout << "After Iteration:" << std::endl;
-                print_image();
+                print_image_with_borders();
                 std::cout << std::endl;
 #endif
             }
@@ -263,8 +263,10 @@ public:
         }
     }
 
-    void print_image() {
+    std::string get_image_with_borders() {
         static const std::size_t length = 10;
+
+        std::string result;
 
         for (int tile_row = m_lower; tile_row <= m_upper; tile_row++) {
             for (int row = 0; row < length; row++) {
@@ -273,21 +275,51 @@ public:
 
                     for (int col = 0; col < length; col++) {
                         if (instance != nullptr) {
-                            std::cout << instance->m_content[row][col];
+                            result += instance->m_content[row][col];
                         }
                         else {
-                            std::cout << ' ';
+                            result += ' ';
                         }
                     }
 
-                    std::cout << ' ';
+                    result += ' ';
                 }
 
-                std::cout << ' ' << std::endl;
+                result += " \n";
             }
 
-            std::cout << std::endl;
+            result += '\n';
         }
+
+        return result;
+    }
+
+    std::string get_image() {
+        static const std::size_t length = 10;
+
+        std::string result;
+
+        for (int tile_row = m_lower; tile_row <= m_upper; tile_row++) {
+            for (int row = 1; row < length - 1; row++) {
+                for (int tile_col = m_left; tile_col <= m_right; tile_col++) {
+                    auto instance = m_map[tile_row][tile_col];
+
+                    for (int col = 1; col < length - 1; col++) {
+                        /* print */
+                        if (instance != nullptr) {
+                            result += instance->m_content[row][col];
+                        }
+                        else {
+                            result += ' ';
+                        }
+                    }
+                }
+
+                result += '\n';
+            }
+        }
+
+        return result;
     }
 
     std::size_t get_border_multiply_id() {
@@ -376,16 +408,6 @@ private:
 
                 default:
                     throw std::exception("Unknown type of operation.");
-                }
-
-                if (m_not_placed_tiles.size() == 1 && candidate->m_id == 1171) {
-                    std::cout << "Candidate: \n" << std::endl;
-                    candidate->print();
-
-                    std::cout << "\nCurrent Image: \n" << std::endl;
-                    print_image();
-
-                    std::cout << std::endl;
                 }
 
                 if (is_match(p_current, p_border_id, candidate)) {
@@ -513,50 +535,196 @@ private:
 };
 
 
+class monster_search {
+private:
+    enum e_instruction { NOP, ROTATE, FLIP };
+
+private:
+    std::vector<std::string> m_image;
+
+    const std::vector<e_instruction> m_instructions = { NOP, ROTATE, ROTATE, ROTATE, FLIP, ROTATE, ROTATE, ROTATE };
+
+public:
+    monster_search(const std::string & p_image) {
+        std::size_t lborder = 0;
+        std::size_t rborder = p_image.find('\n', lborder);
+
+        while (rborder != std::string::npos) {
+            std::string line = p_image.substr(lborder, rborder - lborder);
+            m_image.push_back(line);
+
+            lborder = rborder + 1;
+            rborder = p_image.find('\n', lborder);
+        }
+
+        std::string line = p_image.substr(lborder);
+        if (!line.empty()) {
+            m_image.push_back(line);
+        }
+    }
+
+public:
+    std::size_t detect() {
+        for (auto instruction : m_instructions) {
+            switch (instruction) {
+            case e_instruction::NOP:
+                break;
+
+            case e_instruction::ROTATE:
+                rotate_image();
+                break;
+
+            case e_instruction::FLIP:
+                flip_image();
+                break;
+
+            default:
+                throw std::exception("Unexpected instruction.");
+            }
+
+            if (find_monsters()) {
+                return calculate_area();
+            }
+        }
+
+        throw std::exception("Incorrect input.");
+    }
+
+
+    std::string get_image() {
+        std::string result;
+
+        for (auto & row : m_image) {
+            result += row + '\n';
+        }
+
+        return result;
+    }
+
+private:
+    void rotate_image() {
+        std::vector<std::string> result(m_image[0].size(), std::string(m_image.size(), ' '));
+
+        for (std::size_t i = 0; i < m_image.size(); i++) {
+            for (std::size_t j = 0; j < m_image[0].size(); j++) {
+                result[j][m_image.size() - i - 1] = m_image[i][j];
+            }
+        }
+
+        m_image = std::move(result);
+    }
+
+
+    void flip_image() {
+        for (auto & row : m_image) {
+            std::reverse(row.begin(), row.end());
+        }
+    }
+
+
+    bool find_monsters() {
+        static const std::string row_first  = "..................#.";
+        static const std::string row_second = "#....##....##....###";
+        static const std::string row_third  = ".#..#..#..#..#..#...";
+
+        static const std::regex pattern_first ("(" + row_first + ")");
+        static const std::regex pattern_second("(" + row_second + ")");
+        static const std::regex pattern_third ("(" + row_third + ")");
+
+        static const std::size_t pattern_length = 20;
+
+        bool global_monster_detected = false;
+
+        for (std::size_t i = 1; i < m_image.size() - 1; i++) {
+            std::size_t rborder = 0;
+            std::size_t lborder = 0;
+
+            std::string second_line = m_image[i].substr(rborder);
+
+            std::smatch results;
+            while (std::regex_search(second_line, results, pattern_second)) {
+                bool monster_detected = false;
+                rborder = results.position(1) + rborder;  /* start of the group */
+
+                const std::string first_line = m_image[i - 1].substr(rborder, rborder + pattern_length);
+                const std::string third_line = m_image[i + 1].substr(rborder, rborder + pattern_length);
+
+                if (std::regex_search(first_line, results, pattern_first)) {
+                    if (std::regex_search(third_line, results, pattern_third)) {
+                        mark_monster(rborder, rborder + pattern_length, i - 1, row_first);
+                        mark_monster(rborder, rborder + pattern_length, i, row_second);
+                        mark_monster(rborder, rborder + pattern_length, i + 1, row_third);
+
+                        monster_detected = true;
+                        global_monster_detected = true;
+                    }
+                }
+
+                /* continue investigation */
+                if (monster_detected) {
+                    rborder++;
+                    second_line = m_image[i].substr(rborder);
+                }
+                else {
+                    break;  /* there is nothing */
+                }
+            }
+        }
+
+        return global_monster_detected;
+    }
+
+
+    void mark_monster(const std::size_t p_rborder, const std::size_t p_lborder, const std::size_t p_index, const std::string p_pattern) {
+        for (std::size_t i = p_rborder; i < p_lborder; i++) {
+            if (p_pattern[i - p_rborder] == '#') {
+                m_image[p_index][i] = 'O';
+            }
+        }
+    }
+
+
+    std::size_t calculate_area() {
+        std::size_t result = 0;
+
+        for (std::size_t i = 0; i < m_image.size(); i++) {
+            for (std::size_t j = 0; j < m_image[0].size(); j++) {
+                if (m_image[i][j] == '#') {
+                    result++;
+                }
+            }
+        }
+
+        return result;
+    }
+};
+
+
+
 int main() {
     auto tiles = read("input.txt");
 
-    /*
-    tile::ptr instance = *tiles.begin();
-
-    std::cout << "ORIGINAL:\n" << std::endl;
-    instance->print_with_borders();
-
-    std::cout << "ROTATE 90:\n" << std::endl;
-    instance->rotate();
-    instance->print_with_borders();
-
-    std::cout << "ROTATE 180:\n" << std::endl;
-    instance->rotate();
-    instance->print_with_borders();
-
-    std::cout << "ROTATE 270:\n" << std::endl;
-    instance->rotate();
-    instance->print_with_borders();
-
-    std::cout << "FLIP:\n" << std::endl;
-    instance->flip();
-    instance->print_with_borders();
-
-    std::cout << "ROTATE 90:\n" << std::endl;
-    instance->rotate();
-    instance->print_with_borders();
-
-    std::cout << "ROTATE 180:\n" << std::endl;
-    instance->rotate();
-    instance->print_with_borders();
-
-    std::cout << "ROTATE 270:\n" << std::endl;
-    instance->rotate();
-    instance->print_with_borders();
-    */
-
     tile_matcher solver(tiles);
 
-    std::cout << "Image represented by ID: " << std::endl;
+    std::cout << "Image:\n" << std::endl;
+    std::cout << solver.get_image_with_borders() << std::endl;
+
+    std::cout << "Image without borders:\n" << std::endl;
+    std::cout << solver.get_image() << std::endl;
+
+    std::cout << "Image represented by ID:\n" << std::endl;
     solver.print();
 
     std::cout << std::endl << "The multiply ID of borders: " << solver.get_border_multiply_id() << std::endl;
+
+
+    monster_search searcher(solver.get_image());
+    const std::size_t area = searcher.detect();
+
+    std::cout << std::endl << "Image with monsters:\n" << std::endl;
+    std::cout << searcher.get_image() << std::endl;
+
+    std::cout << "The amount of detected monsters: " << area << std::endl;
 
     return 0;
 }
