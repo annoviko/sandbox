@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <fstream>
 #include <iostream>
+#include <iomanip>
 #include <regex>
 #include <string>
 #include <vector>
@@ -8,7 +9,11 @@
 #include <unordered_set>
 
 
-#define NOT_ASSIGNED    INT_MAX
+#define NOT_ASSIGNED        INT_MAX
+
+#if 0
+    #define DEBUG_PRINT
+#endif
 
 
 enum class e_border {
@@ -58,6 +63,7 @@ public:
     void print_with_borders() {
         print();
 
+        std::cout << std::endl;
         std::cout << "UPPER: " << m_borders[(int)e_border::UPPER] << std::endl;
         std::cout << "RIGHT: " << m_borders[(int)e_border::RIGHT] << std::endl;
         std::cout << "LOWER: " << m_borders[(int)e_border::LOWER] << std::endl;
@@ -73,14 +79,15 @@ private:
         new_borders[(int)e_border::LOWER] = m_borders[(int)e_border::RIGHT];
         new_borders[(int)e_border::LEFT] = m_borders[(int)e_border::LOWER];
 
+        std::reverse(new_borders[(int)e_border::UPPER].begin(), new_borders[(int)e_border::UPPER].end());
+        std::reverse(new_borders[(int)e_border::LOWER].begin(), new_borders[(int)e_border::LOWER].end());
+
         m_borders = std::move(new_borders);
     }
 
     void flip_borders() {
         std::reverse(m_borders[(int)e_border::UPPER].begin(), m_borders[(int)e_border::UPPER].end());
         std::reverse(m_borders[(int)e_border::LOWER].begin(), m_borders[(int)e_border::LOWER].end());
-        std::reverse(m_borders[(int)e_border::RIGHT].begin(), m_borders[(int)e_border::RIGHT].end());
-        std::reverse(m_borders[(int)e_border::LEFT].begin(), m_borders[(int)e_border::LEFT].end());
         std::swap(m_borders[(int)e_border::RIGHT], m_borders[(int)e_border::LEFT]);
     }
 };
@@ -98,7 +105,6 @@ void fill_borders(tile_sequence & p_seq) {
 
         std::string upper_border = instance->m_content.front();
         std::string lower_border = instance->m_content.back();
-        std::reverse(lower_border.begin(), lower_border.end());
 
         instance->m_borders[(std::size_t) e_border::UPPER] = upper_border;
         instance->m_borders[(std::size_t) e_border::LOWER] = lower_border;
@@ -108,8 +114,6 @@ void fill_borders(tile_sequence & p_seq) {
             lborder.push_back(row.front()); /* LEFT_BORDER */
             rborder.push_back(row.back());  /* RIGHT_BORDER */
         }
-
-        std::reverse(lborder.begin(), lborder.end());
 
         instance->m_borders[(std::size_t) e_border::LEFT] = lborder; /* LEFT_BORDER */
         instance->m_borders[(std::size_t) e_border::RIGHT] = rborder; /* RIGHT_BORDER */
@@ -206,6 +210,10 @@ public:
             m_not_placed_tiles.push_back(*iter);
         }
 
+#if defined(DEBUG_PRINT)
+        print_image();
+#endif
+
         std::list<tile::ptr> to_consider = { initial };
         while (!to_consider.empty()) {
             tile::ptr current = to_consider.front();
@@ -232,9 +240,11 @@ public:
                 assign_neighbor(current, border_id, neighbor);
                 amount_neighbors++;
 
+#if defined(DEBUG_PRINT)
                 std::cout << "After Iteration:" << std::endl;
-                print();
+                print_image();
                 std::cout << std::endl;
+#endif
             }
 
             if (amount_neighbors < 2) {
@@ -247,21 +257,47 @@ public:
         for (int i = m_lower; i <= m_upper; i++) {
             for (int j = m_left; j <= m_right; j++) {
                 auto current = m_map[i][j];
-                std::cout << ((current != nullptr) ? current->m_id : 0) << " ";
+                std::cout << std::setw(6) << ((current != nullptr) ? current->m_id : 0) << " ";
             }
             std::cout << std::endl;
         }
     }
 
+    void print_image() {
+        static const std::size_t length = 10;
+
+        for (int tile_row = m_lower; tile_row <= m_upper; tile_row++) {
+            for (int row = 0; row < length; row++) {
+                for (int tile_col = m_left; tile_col <= m_right; tile_col++) {
+                    auto instance = m_map[tile_row][tile_col];
+
+                    for (int col = 0; col < length; col++) {
+                        if (instance != nullptr) {
+                            std::cout << instance->m_content[row][col];
+                        }
+                        else {
+                            std::cout << ' ';
+                        }
+                    }
+
+                    std::cout << ' ';
+                }
+
+                std::cout << ' ' << std::endl;
+            }
+
+            std::cout << std::endl;
+        }
+    }
+
     std::size_t get_border_multiply_id() {
-        return 0;
+        return m_map[m_upper][m_left]->m_id * m_map[m_upper][m_right]->m_id * m_map[m_lower][m_left]->m_id * m_map[m_lower][m_right]->m_id;
     }
 
 private:
     void assign_neighbor(const tile::ptr & p_current, const e_border & p_border, const tile::ptr & p_neighbor) {
         switch (p_border) {
         case e_border::UPPER:
-            m_map[p_current->m_i - 1][p_current->m_j] = p_neighbor;
             p_neighbor->m_i = p_current->m_i - 1;
             p_neighbor->m_j = p_current->m_j;
 
@@ -270,7 +306,6 @@ private:
             break;
 
         case e_border::LOWER:
-            m_map[p_current->m_i + 1][p_current->m_j] = p_neighbor;
             p_neighbor->m_i = p_current->m_i + 1;
             p_neighbor->m_j = p_current->m_j;
 
@@ -279,7 +314,6 @@ private:
             break;
 
         case e_border::LEFT:
-            m_map[p_current->m_i][p_current->m_j - 1] = p_neighbor;
             p_neighbor->m_i = p_current->m_i;
             p_neighbor->m_j = p_current->m_j - 1;
 
@@ -288,7 +322,6 @@ private:
             break;
 
         case e_border::RIGHT:
-            m_map[p_current->m_i][p_current->m_j + 1] = p_neighbor;
             p_neighbor->m_i = p_current->m_i;
             p_neighbor->m_j = p_current->m_j + 1;
 
@@ -297,8 +330,10 @@ private:
             break;
 
         default:
-            //throw std::exception("Unexpected border type.");
+            throw std::exception("Unexpected border type.");
         }
+
+        m_map[p_neighbor->m_i][p_neighbor->m_j] = p_neighbor;
     }
 
 
@@ -341,6 +376,16 @@ private:
 
                 default:
                     throw std::exception("Unknown type of operation.");
+                }
+
+                if (m_not_placed_tiles.size() == 1 && candidate->m_id == 1171) {
+                    std::cout << "Candidate: \n" << std::endl;
+                    candidate->print();
+
+                    std::cout << "\nCurrent Image: \n" << std::endl;
+                    print_image();
+
+                    std::cout << std::endl;
                 }
 
                 if (is_match(p_current, p_border_id, candidate)) {
@@ -469,19 +514,49 @@ private:
 
 
 int main() {
-    auto tiles = read("test.txt");
-    //auto tile = *tiles.begin();
-   
-    //tile->print_with_borders();
-    //std::cout << "\n\n- [ROTATE]:" << std::endl;
-    //tile->rotate();
-    //tile->print_with_borders();
-    //std::cout << "\n\n- [FLIP]:" << std::endl;
-    //tile->flip();
-    //tile->print_with_borders();
+    auto tiles = read("input.txt");
 
-    tile_matcher(tiles).print();
-    //std::cout << "The multiply ID of borders: " << tile_matcher(tiles).get_border_multiply_id() << std::endl;
+    /*
+    tile::ptr instance = *tiles.begin();
+
+    std::cout << "ORIGINAL:\n" << std::endl;
+    instance->print_with_borders();
+
+    std::cout << "ROTATE 90:\n" << std::endl;
+    instance->rotate();
+    instance->print_with_borders();
+
+    std::cout << "ROTATE 180:\n" << std::endl;
+    instance->rotate();
+    instance->print_with_borders();
+
+    std::cout << "ROTATE 270:\n" << std::endl;
+    instance->rotate();
+    instance->print_with_borders();
+
+    std::cout << "FLIP:\n" << std::endl;
+    instance->flip();
+    instance->print_with_borders();
+
+    std::cout << "ROTATE 90:\n" << std::endl;
+    instance->rotate();
+    instance->print_with_borders();
+
+    std::cout << "ROTATE 180:\n" << std::endl;
+    instance->rotate();
+    instance->print_with_borders();
+
+    std::cout << "ROTATE 270:\n" << std::endl;
+    instance->rotate();
+    instance->print_with_borders();
+    */
+
+    tile_matcher solver(tiles);
+
+    std::cout << "Image represented by ID: " << std::endl;
+    solver.print();
+
+    std::cout << std::endl << "The multiply ID of borders: " << solver.get_border_multiply_id() << std::endl;
 
     return 0;
 }
