@@ -16,6 +16,12 @@ struct recipe {
 };
 
 
+struct product {
+    std::string m_product;
+    std::string m_allergen;
+};
+
+
 using recipe_container = std::list<recipe>;
 
 
@@ -63,7 +69,7 @@ class allocator {
 private:
     recipe_container m_container;
 
-    recipe_entry m_nonfree;
+    std::list<product> m_nonfree;
 
 public:
     allocator(const recipe_container & p_container) :
@@ -76,6 +82,19 @@ public:
         return count_free_ingerients();
     }
 
+    std::string get_dangerous_ingredients() {
+        m_nonfree.sort([](const product & p_a, const product & p_b) {
+            return p_a.m_allergen < p_b.m_allergen;
+        });
+
+        std::string result = m_nonfree.front().m_product;
+        for (auto iter = std::next(m_nonfree.begin()); iter != m_nonfree.end(); iter++) {
+            result += "," + iter->m_product;
+        }
+
+        return result;
+    }
+
 private:
     std::size_t count_free_ingerients() {
         std::size_t result = 0;
@@ -86,14 +105,14 @@ private:
         return result;
     }
 
-    void reduce(const std::string & p_ingredient, const std::string & p_allergent) {
-        m_nonfree.insert(p_ingredient);
+    void reduce(const std::string & p_ingredient, const std::string & p_allergen) {
+        m_nonfree.push_back({ p_ingredient, p_allergen });
 
         std::set<std::pair<std::string, std::string>> to_erase;
 
         for (auto & entry : m_container) {
             entry.m_ingredients.erase(p_ingredient);
-            entry.m_allergens.erase(p_allergent);
+            entry.m_allergens.erase(p_allergen);
 
             if (entry.m_ingredients.size() == 1 && entry.m_allergens.size() == 1) {
                 const std::string intredient_to_remove = *entry.m_ingredients.begin();
@@ -110,6 +129,7 @@ private:
     }
 
     void process() {
+        /* Complexity: O(n^3) */
         for (auto cur_iter = m_container.begin(); cur_iter != m_container.end(); cur_iter++) {
             if (cur_iter->m_allergens.empty()) {
                 continue;
@@ -159,7 +179,10 @@ private:
 int main() {
     auto cookbook = read("input.txt");
 
-    std::cout << "The amount of possibly allergen-free ingredients: " << allocator(cookbook).get_allergen_free() << std::endl;
+    allocator filter(cookbook);
+
+    std::cout << "The amount of possibly allergen-free ingredients: " << filter.get_allergen_free() << std::endl;
+    std::cout << "The canonical dangerous ingredient list: " << filter.get_dangerous_ingredients() << std::endl;
 
     return 0;
 }
