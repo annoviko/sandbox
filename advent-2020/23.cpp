@@ -2,6 +2,7 @@
 #include <iostream>
 #include <fstream>
 #include <memory>
+#include <set>
 #include <string>
 
 
@@ -10,25 +11,25 @@ public:
     using ptr = std::shared_ptr<item>;
 
 public:
-    int m_value = 0;
+    long long m_value = 0;
 
     item::ptr m_next = nullptr;
     item::ptr m_prev = nullptr;
 
 public:
-    static item::ptr make_ptr(const char p_value) {
+    static item::ptr make_ptr(const long long p_value) {
         return std::make_shared<item>(p_value);
     }
 
 public:
-    item(const char p_value) : m_value(p_value - 48) { }
+    item(const long long p_value) : m_value(p_value) { }
 
 public:
     char get_value_as_symbol() const {
         return static_cast<char>(m_value + 48);
     }
 
-    int get_value() const {
+    long long get_value() const {
         return m_value;
     }
 };
@@ -36,33 +37,43 @@ public:
 
 class list {
 private:
-    item::ptr m_map[10];
+    constexpr static long long DEFAULT_PART_ONE_LIMIT = 10;
+    constexpr static long long DEFAULT_PART_SECOND_LIMIT = 1000001;
+
+public:
+    enum class version { one, two };
+
+private:
+    item::ptr * m_map;
 
     item::ptr m_begin = nullptr;
 
     item::ptr m_cur   = nullptr;    /* current cup */
 
-    int m_max = INT_MIN;
-    int m_min = INT_MAX;
+    long long m_max = std::numeric_limits<long long>::min();
+    long long m_min = std::numeric_limits<long long>::max();
 
-    int m_length = 0;
-    int m_current_index = 0;
+    long long m_length = 0;
+    long long m_current_index = 0;
 
 public:
-    list(const std::string & p_value) {
-        m_length = p_value.size();
-        m_current_index = 0;
+    list(const std::string & p_value, const version p_version) {
+        const long long limit = (p_version == version::one) ? DEFAULT_PART_ONE_LIMIT : DEFAULT_PART_SECOND_LIMIT;
+        m_map = new item::ptr[limit];
 
-        m_begin = item::make_ptr(p_value[0]);
+        m_begin = item::make_ptr(p_value[0] - 48);
         m_cur = m_begin;
         update_min_max(m_begin);
 
         item::ptr prev = m_begin;
-        item::ptr cur  = nullptr;
+        item::ptr cur = nullptr;
         m_map[m_begin->m_value] = m_begin;
 
+        m_length = p_value.size();
+        m_current_index = 0;
+
         for (std::size_t i = 1; i < p_value.size(); i++) {
-            cur = item::make_ptr(p_value[i]);
+            cur = item::make_ptr(p_value[i] - 48);
             update_min_max(cur);
 
             m_map[cur->m_value] = cur;
@@ -73,10 +84,31 @@ public:
             prev = cur;
         }
 
+        if (p_version == version::two) {
+            for (long long i = m_max + 1; i < DEFAULT_PART_SECOND_LIMIT; i++) {
+                cur = item::make_ptr(i);
+
+                m_map[cur->m_value] = cur;
+
+                prev->m_next = cur;
+                cur->m_prev = prev;
+
+                prev = cur;
+
+                m_length++;
+            }
+
+            m_max = DEFAULT_PART_SECOND_LIMIT - 1;
+        }
+
         cur->m_next = m_begin;
         m_begin->m_prev = cur;
 
         m_cur = m_begin;
+    }
+
+    ~list() {
+        delete[] m_map;
     }
 
 public:
@@ -116,7 +148,7 @@ public:
         return result;
     }
 
-    std::string get_content_after(const int p_value) {
+    std::string get_content_after(const long long p_value) {
         std::string result;
 
         item::ptr begin = m_begin;
@@ -131,61 +163,50 @@ public:
         return result;
     }
 
+    std::size_t get_multiplication_after(const long long p_value) {
+        item::ptr begin = m_begin;
+        while (begin->get_value() != 1) {
+            begin = begin->m_next;
+        }
+
+        return begin->m_next->get_value() * begin->m_next->m_next->get_value();
+    }
+
 private:
     void update_min_max(const item::ptr & p_item) {
         m_min = std::min(m_min, p_item->get_value());
         m_max = std::max(m_max, p_item->get_value());
     }
 
-    item::ptr get_left_item() const {
+    inline item::ptr get_left_item() const {
         return m_cur->m_next;
     }
 
-    item::ptr get_right_item() const {
-        item::ptr result = m_cur;
-        for (std::size_t i = 0; i < 3; i++) {
-            result = result->m_next;
-        }
-
-        return result;
+    inline item::ptr get_right_item() const {
+        return m_cur->m_next->m_next->m_next;
     }
 
-    int get_destination_cup(const item::ptr & p_current, const item::ptr & p_lborder, const item::ptr & p_rborder) const {
-        bool available_values[10];
+    long long get_destination_cup(const item::ptr & p_lborder, const item::ptr & p_rborder) const {
+        std::set<long long> unavailable_values;
         for (item::ptr cur = p_lborder; cur != p_rborder->m_next; cur = cur->m_next) {
-            available_values[cur->get_value()] = false;
+            unavailable_values.insert(cur->get_value());
         }
 
-        int destination = m_cur->get_value() - 1;
-        for (; destination >= m_min; destination--) {
-            if (available_values[destination]) {
+        long long destination = m_cur->get_value() - 1;
+        for (; destination >= m_min; --destination) {
+            if (unavailable_values.find(destination) == unavailable_values.end()) {
                 break;
             }
         }
 
         if (destination < m_min) {
-            if (available_values[m_max]) {
-                destination = m_max;
-            }
-            else {
-                /* the maximum value in the range, we have to look for the maximum in the rest list */
-                destination = p_current->get_value();
-                for (item::ptr cur = p_current->m_next; cur != p_current; cur = cur->m_next) {
-                    destination = std::max(destination, cur->get_value());
-                }
+            destination = m_max;
+            while (unavailable_values.find(destination) != unavailable_values.end()) {
+                --destination;
             }
         }
 
         return destination;
-    }
-
-    void keep_order() {
-        item::ptr next_begin = m_cur;
-        for (int cursor = m_current_index; cursor > 0; cursor--) {
-            next_begin = next_begin->m_prev;
-        }
-
-        m_begin = next_begin;
     }
 
     void move() {
@@ -197,7 +218,7 @@ private:
         rborder->m_next->m_prev = m_cur;
 
         /* 2. destination cup */
-        int destination_cup = get_destination_cup(m_cur, lborder, rborder);
+        long long destination_cup = get_destination_cup(lborder, rborder);
         item::ptr ldestination = m_map[destination_cup];
         item::ptr rdestination = ldestination->m_next;
 
@@ -208,12 +229,9 @@ private:
         rborder->m_next = rdestination;
         rdestination->m_prev = rborder;
 
-        /* 3.1. keep order */
-        keep_order();
-
         /* 4. get next current cup */
         m_cur = m_cur->m_next;
-        m_current_index++;
+        ++m_current_index;
 
         if (m_current_index >= m_length) {
             m_current_index = 0;
@@ -224,10 +242,16 @@ private:
 
 int main()
 {
-    list container("643719258");
+    const std::string input_value = "643719258";
 
-    container.process(100);
-    std::cout << "Labels after (1): " << container.get_content_after(1) << std::endl;
+    list container_first_version(input_value, list::version::one);
+
+    container_first_version.process(100);
+    std::cout << "Labels after (1): " << container_first_version.get_content_after(1) << std::endl;
+
+    list container_second_version(input_value, list::version::two);
+    container_second_version.process(10000000);
+    std::cout << "Multiplication after (1): " << container_second_version.get_multiplication_after(1) << std::endl;
 
     return 0;
 }
