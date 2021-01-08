@@ -48,13 +48,10 @@ private:
 
     item::ptr m_begin = nullptr;
 
-    item::ptr m_cur   = nullptr;    /* current cup */
+    item::ptr m_cur = nullptr;    /* current cup */
 
     long long m_max = std::numeric_limits<long long>::min();
     long long m_min = std::numeric_limits<long long>::max();
-
-    long long m_length = 0;
-    long long m_current_index = 0;
 
 public:
     list(const std::string & p_value, const version p_version) {
@@ -68,9 +65,6 @@ public:
         item::ptr prev = m_begin;
         item::ptr cur = nullptr;
         m_map[m_begin->m_value] = m_begin;
-
-        m_length = p_value.size();
-        m_current_index = 0;
 
         for (std::size_t i = 1; i < p_value.size(); i++) {
             cur = item::make_ptr(p_value[i] - 48);
@@ -94,8 +88,6 @@ public:
                 cur->m_prev = prev;
 
                 prev = cur;
-
-                m_length++;
             }
 
             m_max = DEFAULT_PART_SECOND_LIMIT - 1;
@@ -231,11 +223,6 @@ private:
 
         /* 4. get next current cup */
         m_cur = m_cur->m_next;
-        ++m_current_index;
-
-        if (m_current_index >= m_length) {
-            m_current_index = 0;
-        }
     }
 };
 
