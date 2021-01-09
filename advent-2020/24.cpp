@@ -10,7 +10,7 @@
 constexpr static std::int64_t INVALID_VALUE = std::numeric_limits<std::int64_t>::max();
 
 
-enum class color { WHITE = 0, BACK };
+enum class color { WHITE = 0, BLACK };
 
 
 enum class direction { NW = 0, SW, NE, SE, W, E };
@@ -100,10 +100,10 @@ public:
     void flip() {
         switch (m_color) {
         case color::WHITE:
-            m_color = color::BACK;
+            m_color = color::BLACK;
             break;
 
-        case color::BACK:
+        case color::BLACK:
             m_color = color::WHITE;
             break;
 
@@ -116,7 +116,7 @@ public:
         m_position = p_position;
     }
 
-    bool is_black() const { return m_color == color::BACK; }
+    bool is_black() const { return m_color == color::BLACK; }
 
     bool is_white() const { return m_color == color::WHITE; }
 };
@@ -148,6 +148,8 @@ public:
         for (std::size_t i = 0; i < p_days; i++) {
             simulate();
             std::cout << "Day " << i + 1 << ": " << count_black() << std::endl;
+            //print();
+            //std::cout << std::endl;
         }
     }
 
@@ -164,6 +166,45 @@ public:
         }
 
         return result;
+    }
+
+    void print() {
+        long long y_min = std::numeric_limits<long long>::max();
+        long long x_min = std::numeric_limits<long long>::max();
+
+        long long y_max = std::numeric_limits<long long>::min();
+        long long x_max = std::numeric_limits<long long>::min();
+
+        for (const auto & row : m_map) {
+            for (const auto & tile : row.second) {
+                y_min = std::min(y_min, tile.second.get_position().y);
+                x_min = std::min(x_min, tile.second.get_position().x);
+
+                y_max = std::max(y_max, tile.second.get_position().y);
+                x_max = std::max(x_max, tile.second.get_position().x);
+            }
+        }
+
+        for (long long y = y_min; y <= y_max; y++) {
+            auto iter_row = m_map.find(y);
+            if (iter_row == m_map.end()) {
+                std::cout << std::endl;
+                continue;
+            }
+
+            for (long long x = x_min; x <= x_max; x++) {
+                auto iter_tile = iter_row->second.find(x);
+
+                if (iter_tile == iter_row->second.end()) {
+                    std::cout << ' ';
+                    continue;
+                }
+
+                std::cout << (iter_tile->second.is_black() ? 'B' : 'W');
+            }
+
+            std::cout << std::endl;
+        }
     }
 
 private:
@@ -212,11 +253,12 @@ private:
 
     void scan_tile_neighbors(const tile & p_tile, tile_floor & p_floor) {
         if (p_tile.is_white()) {
-            return; /* analyse only black tile */
+            return; /* analyse only black tile and its neighbors */
         }
 
         /* check current tile itself */
-        if (count_black_neighbors(p_tile) == 2) {   /* with exactly 2 black tiles */
+        const std::size_t current_black_neighbors = count_black_neighbors(p_tile);
+        if (current_black_neighbors == 0 || current_black_neighbors > 2) {   /* with zero or more than 2 black tiles */
             position coordinate = { p_tile.get_position().x, p_tile.get_position().y };
             p_floor[coordinate.y][coordinate.x] = tile(color::WHITE, coordinate);    /* set tile to white color */
         }
@@ -224,17 +266,18 @@ private:
         position_sequence coordinates = p_tile.get_neighbors();     /* get all neighbors of black tile */
         for (auto & coordinate : coordinates) {
             tile & neighbor = m_map[coordinate.y][coordinate.x];
+            neighbor.set_position(coordinate);  /* it might be new tile that wasn't initialized - update its coordinates */
 
             const std::size_t black_neighbors = count_black_neighbors(neighbor);
 
-            if (neighbor.is_white()) {  /* if white tile */
+            if (neighbor.is_black()) {  /* if black tile */
                 if (black_neighbors == 0 || black_neighbors > 2) {     /* with zero or more than 2 black tiles */
-                    p_floor[coordinate.y][coordinate.x] = tile(color::BACK, coordinate);    /* set tile to black color */
+                    p_floor[coordinate.y][coordinate.x] = tile(color::WHITE, coordinate);    /* set tile to white color */
                 }
             }
-            else {  /* if black tile */
+            else if (neighbor.is_white()) {  /* if white tile */
                 if (black_neighbors == 2) {     /* with exactly 2 black tiles */
-                    p_floor[coordinate.y][coordinate.x] = tile(color::WHITE, coordinate);    /* set tile to white color */
+                    p_floor[coordinate.y][coordinate.x] = tile(color::BLACK, coordinate);    /* set tile to black color */
                 }
             }
         }
@@ -314,13 +357,14 @@ tile_path_sequence read(const std::string & p_file) {
 
 
 int main() {
-    auto pathes = read("test.txt");
+    auto pathes = read("input.txt");
 
     hotel_floor instance;
     instance.identify_sequence(pathes);
 
     std::cout << "Black tiles on the floor: " << instance.count_black() << std::endl;
 
+    instance.print();
     instance.simulate_evolution(100);
 
     std::cout << "Black tiles on the floor (after 100 days): " << instance.count_black() << std::endl;
