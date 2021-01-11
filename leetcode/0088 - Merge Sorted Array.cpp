@@ -32,6 +32,44 @@ public:
             inum2++;
         }
     }
+#elif defined(FAST_SOLUTION_2021_01_11)
+class Solution {
+public:
+    void merge(std::vector<int>& nums1, int m, std::vector<int>& nums2, int n) {
+        std::vector<int> & large = (nums1.size() >= nums2.size()) ? nums1 : nums2;
+        std::vector<int> & small = (nums1.size() < nums2.size()) ? nums1 : nums2;
+
+        if (large.empty() || small.empty()) {
+            return;
+        }
+
+        int pos1 = large.size() - small.size() - 1, pos2 = small.size() - 1;
+
+        int rborder = large.size() - 1;
+
+        while (pos1 >= 0 && pos2 >= 0) {
+            if (large[pos1] > small[pos2]) {
+                std::swap(large[pos1], large[rborder]);
+
+                rborder--;
+                pos1--;
+            }
+            else {
+                large[rborder] = small[pos2];
+                rborder--;
+                pos2--;
+            }
+        }
+
+        /* copy rest from pos2 if there is something */
+        while (rborder >= 0 && pos2 >= 0) {
+            large[rborder] = small[pos2];
+            rborder--;
+            pos2--;
+        }
+    }
+};
+
 #else
     void merge(std::vector<int>& nums1, int m, std::vector<int>& nums2, int n) {
         int inum1 = m - 1;
