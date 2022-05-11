@@ -31,9 +31,40 @@ private:
     visit_map m_visit;
 
 public:
-    path_finder(const cave_map& p_map) :
-        m_map(p_map)
-    {
+    path_finder(const cave_map& p_map, bool p_multi_tile) {
+        if (!p_multi_tile) {
+            m_map = p_map;
+        }
+        else {
+            cave_map big_map = cave_map(p_map.size() * 5, cave_row(p_map[0].size() * 5, 0));
+
+            std::size_t row_tile = 0;
+            for (std::size_t i = 0; i < big_map.size(); i++) {
+                if ((i != 0) && (i % p_map.size() == 0)) {
+                    row_tile++;
+                }
+
+                std::size_t col_tile = 0;
+                for (std::size_t j = 0; j < big_map[0].size(); j++) {
+                    if ((j != 0) && (j % p_map[0].size() == 0)) {
+                        col_tile++;
+                    }
+
+                    const std::uint64_t i_small = i % p_map.size();
+                    const std::uint64_t j_small = j % p_map[0].size();
+
+                    std::uint64_t value_to_add = p_map[i_small][j_small] + row_tile + col_tile;
+                    while(value_to_add > 9) {
+                        value_to_add -= 9;
+                    }
+
+                    big_map[i][j] = value_to_add;
+                }
+            }
+
+            m_map = std::move(big_map);
+        }
+
         m_cost = cost_map(m_map.size(), cost_row(m_map[0].size(), std::numeric_limits<std::uint64_t>::max()));
         m_visit = visit_map(m_map.size(), visit_row(m_map[0].size(), false));
     }
@@ -70,12 +101,9 @@ private:
         return neighbors;
     }
 
-    void traverse() {
-        m_map.back().back() = 0;
-        m_cost.back().back() = 0;
-
+    void traverse(std::uint64_t i_start, std::uint64_t j_start) {
         std::list<neighbor_position> to_visit;
-        to_visit.push_back({ m_map.size() - 1, m_map[0].size() - 1 });
+        to_visit.push_back({ i_start, j_start });
 
         while(!to_visit.empty()) {
             auto node = to_visit.front(); // get closest node
@@ -118,10 +146,34 @@ private:
         }
     }
 
+    void print_map() {
+        for (const auto& row : m_map) {
+            for (const auto val : row) {
+                std::cout << (int) val;
+            }
+
+            std::cout << std::endl;
+        }
+    }
+
 public:
-    std::uint64_t find_optimal_way() {
-        traverse();
-        return m_cost[0][0];
+    std::uint64_t find_optimal_way_in_tile() {
+        m_map.back().back() = 0;
+        m_cost.back().back() = 0;
+
+        traverse(m_map.size() - 1, m_map[0].size() - 1);
+
+        return m_cost.front().front();
+    }
+
+
+    std::uint64_t find_optimal_way_in_map() {
+        m_map.front().front() = 0;
+        m_cost.front().front() = 0;
+
+        traverse(0, 0);
+
+        return m_cost.back().back();
     }
 };
 
@@ -146,7 +198,8 @@ cave_map read_input() {
 int main() {
     cave_map input = read_input();
 
-    std::cout << "The smallest risk path: " << path_finder(input).find_optimal_way() << std::endl;
+    std::cout << "The smallest risk path in the tile: " << path_finder(input, false).find_optimal_way_in_tile() << std::endl;
+    std::cout << "The smallest risk path in the complete map: " << path_finder(input, true).find_optimal_way_in_map() << std::endl;
 
     return 0;
 }
