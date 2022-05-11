@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <iostream>
 #include <iomanip>
 #include <fstream>
@@ -21,6 +22,15 @@ using visit_map = std::vector<visit_row>;
 struct neighbor_position {
     std::uint64_t row = 0;
     std::uint64_t col = 0;
+    cost_map * __cost = nullptr;
+
+    std::uint64_t get_cost() const {
+        return __cost->at(row)[col];
+    }
+
+    bool operator<(const neighbor_position& p_other) const {
+        return get_cost() < p_other.get_cost();
+    }
 };
 
 
@@ -80,37 +90,38 @@ private:
     }
 
 
-    std::list<neighbor_position> get_non_visited_neighbors(std::uint64_t p_row, std::uint64_t p_col) {
-        std::list<neighbor_position> neighbors;
+    std::multiset<neighbor_position> get_non_visited_neighbors(std::uint64_t p_row, std::uint64_t p_col) {
+        std::multiset<neighbor_position> neighbors;
         if ((p_row > 0) && !m_visit[p_row - 1][p_col]) {
-            neighbors.push_back({ p_row - 1, p_col });
+            neighbors.insert({ p_row - 1, p_col, &m_cost });
         }
 
         if ((p_col > 0) && !m_visit[p_row][p_col - 1]) {
-            neighbors.push_back({ p_row, p_col - 1 });
+            neighbors.insert({ p_row, p_col - 1, &m_cost });
         }
 
         if ((p_row + 1 < m_map.size()) && !m_visit[p_row + 1][p_col]) {
-            neighbors.push_back({ p_row + 1, p_col });
+            neighbors.insert({ p_row + 1, p_col, &m_cost });
         }
 
         if ((p_col + 1 < m_map[0].size()) && !m_visit[p_row][p_col + 1]) {
-            neighbors.push_back({ p_row, p_col + 1 });
+            neighbors.insert({ p_row, p_col + 1, &m_cost });
         }
 
         return neighbors;
     }
 
-    void traverse(std::uint64_t i_start, std::uint64_t j_start) {
-        std::list<neighbor_position> to_visit;
-        to_visit.push_back({ i_start, j_start });
+    void traverse(std::uint64_t i_start, std::uint64_t j_start, std::uint64_t i_end, std::uint64_t j_end) {
+        std::multiset<neighbor_position> to_visit;
+        to_visit.insert({ i_start, j_start, &m_cost });
 
         while(!to_visit.empty()) {
-            auto node = to_visit.front(); // get closest node
-            to_visit.pop_front();
+            auto iter_node = to_visit.begin();
+            auto node = *iter_node; // get closest node
+            to_visit.erase(iter_node);
 
             if (is_visited(node.row, node.col)) {
-                continue; // we might have non-unique neighbors in the list since it is list
+                continue; // we might have non-unique neighbors in the multimap since we saving time on updating nodes
             }
 
             auto neighbors = get_non_visited_neighbors(node.row, node.col);
@@ -119,15 +130,16 @@ private:
                 auto cost_to_move = m_map[neighbor.row][neighbor.col] + m_cost[node.row][node.col];
                 if (cost_to_move < m_cost[neighbor.row][neighbor.col]) {
                     m_cost[neighbor.row][neighbor.col] = cost_to_move;
+
+                    if ((neighbor.row == i_end) && (neighbor.col == j_end)) {
+                        return;
+                    }
                 }
 
-                to_visit.push_back(neighbor);
+                to_visit.insert(neighbor);
             }
 
             m_visit[node.row][node.col] = true;
-            to_visit.sort([this](const neighbor_position& a, const neighbor_position& b) {
-                return m_cost[a.row][a.col] < m_cost[b.row][b.col];
-            });
         }
     }
 
@@ -161,7 +173,7 @@ public:
         m_map.back().back() = 0;
         m_cost.back().back() = 0;
 
-        traverse(m_map.size() - 1, m_map[0].size() - 1);
+        traverse(m_map.size() - 1, m_map[0].size() - 1, 0, 0);
 
         return m_cost.front().front();
     }
@@ -171,7 +183,7 @@ public:
         m_map.front().front() = 0;
         m_cost.front().front() = 0;
 
-        traverse(0, 0);
+        traverse(0, 0, m_map.size() - 1, m_map[0].size() - 1);
 
         return m_cost.back().back();
     }
