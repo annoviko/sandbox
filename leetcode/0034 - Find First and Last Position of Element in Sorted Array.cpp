@@ -1,49 +1,43 @@
 class Solution {
 public:
-    int findLeftBorder(std::vector<int> & nums, int target) {
-        int begin = 0, end = nums.size();
-        while (begin != end) {
-            int middle = (end + begin) / 2;
-            int value = nums[middle];
-
-            if (value >= target) {
-                end = middle;
-            }
-            else {
-                begin = middle + 1;
-            }
-        }
-
-        return begin;
-    }
-
-    int findRightBorder(std::vector<int> & nums, int target) {
-        int begin = 0, end = nums.size();
-        while (begin != end) {
-            int middle = (end + begin) / 2;
-            int value = nums[middle];
-
-            if (value > target) {
-                end = middle;
-            }
-            else {
-                begin = middle + 1;
-            }
-        }
-
-        return begin;
-    }
-
-    std::vector<int> searchRange(std::vector<int>& nums, int target) {
-        int lborder = findLeftBorder(nums, target);
-        if (lborder >= nums.size() || nums[lborder] != target) {
-            //std::cout << "Not found" << std::endl;
+    std::vector<int> searchRange(const std::vector<int>& nums, int target) {
+        if (nums.empty()) {
             return { -1, -1 };
         }
+        std::vector<int> result;
 
-        int rborder = findRightBorder(nums, target) - 1;
+        int left = 0;
+        int right = nums.size() - 1;
 
-        //std::cout << lborder << " (" << nums[lborder] << "), " << rborder << " (" << nums[rborder] << ")" << std::endl;
-        return { lborder, rborder };
+        while (left < right) {
+            int mid = (right + left) / 2;
+
+            if (nums[mid] < target) {
+                left = mid + 1;
+            }
+            else {
+                right = mid;
+            }
+        }
+
+        if (nums[left] != target) {
+            return { -1, -1 };
+        }
+        result.push_back(left);
+
+        right = nums.size() - 1;
+        while (left < right) {
+            int mid = (right + left) / 2 + 1;
+
+            if (nums[mid] <= target) {
+                left = mid;
+            }
+            else {
+                right = mid - 1;
+            }
+        }
+
+        result.push_back(right);
+        return result;
     }
 };
