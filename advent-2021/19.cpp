@@ -195,7 +195,27 @@ public:
     }
 
 
+    std::size_t get_largest_distance_between_scanners() {
+        int maximum_distance = 0;
+        for (std::size_t i = 0; i < m_map.size(); i++) {
+            for (std::size_t j = i + 1; j < m_map.size(); j++) {
+                const auto& p1 = m_map[i].position;
+                const auto& p2 = m_map[j].position;
+
+                maximum_distance = std::max(manhattan_distance(p1, p2), maximum_distance);
+            }
+        }
+
+        return maximum_distance;
+    }
+
+
 private:
+    int manhattan_distance(const point& p1, const point& p2) const {
+        return std::abs(p1.x - p2.x) + std::abs(p1.y - p2.y) + std::abs(p1.z - p2.z);
+    }
+
+
     bool match_scanner(scanner_info& p_info) {
         for (std::size_t j = 0; j < m_map.size(); j++) {
             if (p_info.not_matchable_with.find(j) != p_info.not_matchable_with.end()) {
@@ -348,6 +368,7 @@ int main() {
     map_builder.build_map(input);
 
     std::cout << "The amount of beacons: " << map_builder.get_beacons_amount() << std::endl;
+    std::cout << "The largest distance between scanners: " << map_builder.get_largest_distance_between_scanners() << std::endl;
 
     return 0;
 }
