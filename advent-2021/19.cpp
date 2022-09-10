@@ -17,6 +17,19 @@ public:
     int z = 0;
 
 public:
+    point rot90_z() const {
+        return { -y, x, z };
+    }
+
+    point rot90_x() const {
+        return { x, -z, y };
+    }
+
+    point rot90_y() const {
+        return { z, y, -x };
+    }
+
+public:
     point operator-(const point& p) const {
         return { x - p.x, y - p.y, z - p.z };
     }
@@ -74,6 +87,39 @@ public:
     std::vector<point> produce(const point& p_point) {
         std::vector<point> result;
 
+#if 1
+        result.reserve(24);
+
+        result.push_back(p_point.rot90_x());
+        result.push_back(result.back().rot90_x());
+        result.push_back(result.back().rot90_x());
+        result.push_back(result.back().rot90_x().rot90_z());
+
+        result.push_back(result.back().rot90_y());
+        result.push_back(result.back().rot90_y());
+        result.push_back(result.back().rot90_y());
+        result.push_back(result.back().rot90_y().rot90_z());
+
+        result.push_back(result.back().rot90_x());
+        result.push_back(result.back().rot90_x());
+        result.push_back(result.back().rot90_x());
+        result.push_back(result.back().rot90_x().rot90_z());
+
+        result.push_back(result.back().rot90_y());
+        result.push_back(result.back().rot90_y());
+        result.push_back(result.back().rot90_y());
+        result.push_back(result.back().rot90_y().rot90_x());
+
+        result.push_back(result.back().rot90_z());
+        result.push_back(result.back().rot90_z());
+        result.push_back(result.back().rot90_z());
+        result.push_back(result.back().rot90_z().rot90_x().rot90_x());
+
+        result.push_back(result.back().rot90_z());
+        result.push_back(result.back().rot90_z());
+        result.push_back(result.back().rot90_z());
+        result.push_back(result.back().rot90_z().rot90_y());
+#else
         auto p = p_point;
         for (std::size_t x_i = 0; x_i < 2; x_i++) {
             p.x *= -1;
@@ -94,6 +140,7 @@ public:
             }
         }
 
+#endif
         return result;
     }
 };
@@ -218,7 +265,7 @@ private:
         appreance_t y_appearance;
         appreance_t z_appearance;
 
-        for (const auto & p_point1 : coord1) {
+        for (const auto& p_point1 : coord1) {
             std::size_t index = 0;
             for (const auto& p_point2 : coord2) {
                 const point difference = p_point1 - p_point2;
