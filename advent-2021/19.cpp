@@ -3,8 +3,10 @@
 #include <fstream>
 #include <regex>
 #include <vector>
+#include <map>
 #include <set>
 #include <unordered_map>
+#include <unordered_set>
 #include <string>
 
 
@@ -103,6 +105,18 @@ struct aligned_scanner {
 };
 
 
+struct scanner_info {
+    std::set<point> coordinates;
+    std::vector<std::set<point>> rotations;
+    std::set<int> not_matchable_with;
+
+public:
+    scanner_info(const std::set<point>& p_coord) : coordinates(p_coord) {
+        rotations = rotater().produce(p_coord);
+    }
+};
+
+
 class matcher {
 private:
     std::vector<aligned_scanner> m_map;
@@ -113,9 +127,9 @@ public:
         m_map.push_back({ { 0, 0, 0 }, p_coordinates[0] });
         m_beacons = p_coordinates[0];
 
-        std::list<std::set<point>> not_matched;
+        std::list<scanner_info> not_matched;
         for (std::size_t i = 1; i < p_coordinates.size(); i++) {
-            not_matched.push_back(p_coordinates[i]);
+            not_matched.push_back(scanner_info(p_coordinates[i]));
         }
 
         while (!not_matched.empty()) {
@@ -135,10 +149,18 @@ public:
 
 
 private:
-    bool match_scanner(const std::set<point>& coord2) {
+    bool match_scanner(scanner_info& p_info) {
         for (std::size_t j = 0; j < m_map.size(); j++) {
-            if (check_overlap_in_rotations(m_map[j].beacons, coord2)) {
+            if (p_info.not_matchable_with.find(j) != p_info.not_matchable_with.end()) {
+                /* no need to match this scanner since is not matchable */
+                continue;
+            }
+
+            if (check_overlap_in_rotations(m_map[j].beacons, p_info)) {
                 return true;
+            }
+            else {
+                p_info.not_matchable_with.insert(j); /* no need to match it with scanner j */
             }
         }
 
@@ -147,14 +169,13 @@ private:
     }
 
 
-    bool check_overlap_in_rotations(const std::set<point>& coord1, const std::set<point>& coord2) {
-        if (check_and_register_overlap(coord1, coord2)) {
+    bool check_overlap_in_rotations(const std::set<point>& coord1, const scanner_info& coord2) {
+        if (check_and_register_overlap(coord1, coord2.coordinates)) {
             return true;
         }
 
         /* need to consider all rotations */
-        const auto coord2_roations = rotater().produce(coord2);
-        for (const auto& coord2_rotation : coord2_roations) {
+        for (const auto& coord2_rotation : coord2.rotations) {
             if (check_and_register_overlap(coord1, coord2_rotation)) {
                 return true;
             }
@@ -170,7 +191,10 @@ private:
     }
 
 
-    int get_offset(const std::unordered_map<int, std::set<std::size_t>>& p_appearance) {
+    using appreance_t = std::unordered_map<int, std::unordered_set<std::size_t>>;
+
+
+    int get_offset(const appreance_t& p_appearance) {
         std::size_t count_appearance = 0;
         int offset = INT_MAX;
 
@@ -190,9 +214,9 @@ private:
 
 
     bool check_and_register_overlap(const std::set<point>& coord1, const std::set<point>& coord2) {
-        std::unordered_map<int, std::set<std::size_t>> x_appearance; /* offset : which points */
-        std::unordered_map<int, std::set<std::size_t>> y_appearance;
-        std::unordered_map<int, std::set<std::size_t>> z_appearance;
+        appreance_t x_appearance; /* offset : which points */
+        appreance_t y_appearance;
+        appreance_t z_appearance;
 
         for (const auto & p_point1 : coord1) {
             std::size_t index = 0;
