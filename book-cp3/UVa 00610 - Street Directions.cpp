@@ -1,6 +1,7 @@
 #include <vector>
 #include <string>
 #include <sstream>
+#include <limits>
 
 
 using graph = std::vector<std::vector<int>>;
@@ -20,7 +21,7 @@ public:
     std::vector<edge> rebuild_roads(const graph& p_graph) {
         m_graph = p_graph;
         m_ids = std::vector<int>(p_graph.size(), -1);
-        m_lowlinks = std::vector<int>(p_graph.size(), INT_MAX);
+        m_lowlinks = std::vector<int>(p_graph.size(), std::numeric_limits<int>::max());
         m_counter = 0;
 
         dfs(0, -1);
@@ -35,7 +36,7 @@ private:
         m_ids[p_node] = m_counter;
         m_lowlinks[p_node] = m_counter;
 
-        for (auto & nei : m_graph[p_node]) {
+        for (auto& nei : m_graph[p_node]) {
             if (m_ids[nei] == -1) {
                 dfs(nei, p_node);
 
@@ -120,7 +121,7 @@ int main() {
         std::cout << case_num << std::endl << std::endl;
 
         auto edges = Solution().rebuild_roads(g);
-        for (auto & edge : edges) {
+        for (auto& edge : edges) {
             std::cout << edge[0] + 1 << " " << edge[1] + 1 << std::endl;
         }
 
