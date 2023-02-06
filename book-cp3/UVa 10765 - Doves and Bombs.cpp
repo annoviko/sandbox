@@ -57,6 +57,30 @@ public:
 
                 find_articulations(i);
 
+				/* I am very dissapointed by Online Judge - it has a bug in the verificator. 
+				   Consider the following cases:
+                   4 3
+                   0 1
+                   0 2
+                   0 3
+				   -1 -1
+
+                   and
+				   
+				   4 3
+				   1 0
+				   1 2
+				   1 3
+				   -1 -1
+				   
+				   In the first case, node #0 has two subgraphs, but in the second case 
+				   #1 node has three subgraphs.
+				   
+				   The proper solution for the problem (that is not accepted by the system) is the following:
+				   1. Find articulation points as boolean array.
+				   2. Count subgraphs around each articulation point using lowlink values.
+
+				   */
                 m_articulations[m_cur_root] = (m_root_children > 1);
             }
         }
