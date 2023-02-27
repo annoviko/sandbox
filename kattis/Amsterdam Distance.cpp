@@ -20,9 +20,9 @@ struct edge {
 };
 
 
-/* The solution based on Dijkstra is only for the presentation here as one of the ways to
-   solve the task. But is not efficient here - the solution will be out of time limit.
-   The complixty is O(V^2). */
+/* ONLY FOR PRESENTATION. The solution based on Dijkstra is only for the presentation here 
+   as one of the ways to solve the task. But is not efficient here - the solution will be out 
+   of time limit. The complixty is O(V^2). */
 class solution_dijkstra {
 private:
     std::vector<std::vector<double>> dist; // row = y; col = x
@@ -92,7 +92,7 @@ private:
 };
 
 
-/* This is more efficient solution that examines distance by moving along axis Y. Complexity O(N). */
+/* Proper solution. Complexity O(1). */
 class solution {
 private:
     double R;
@@ -110,14 +110,8 @@ public:
         position cur = p1.y > p2.y ? p1 : p2;
         position other = p1.y > p2.y ? p2 : p1;
 
-        while (cur.y > 0) {
-            cur.y--;
-            dy_appendix += dy_fraction;
-
-            double candidate = distance(cur, other) + dy_appendix;
-
-            result = std::min(candidate, result);
-        }
+        double candidate = distance({ cur.x, 0 }, other) + cur.y * dy_fraction;
+        result = std::min(candidate, result);
 
         return result;
     }
@@ -139,7 +133,7 @@ int main() {
     std::cin >> M >> N >> R >> x1 >> y1 >> x2 >> y2;
 
     // const double distance = solution_dijkstra().shortest_distance(M, N, R, { x1, y1 }, { x2, y2 });  // O((M * N)^2)
-    const double distance = solution().shortest_distance(M, N, R, { x1, y1 }, { x2, y2 });  // O(N)
+    const double distance = solution().shortest_distance(M, N, R, { x1, y1 }, { x2, y2 });  // O(1)
 
     std::cout << std::setprecision(15) << distance << std::endl;
 
