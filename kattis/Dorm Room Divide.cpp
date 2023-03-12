@@ -14,6 +14,11 @@ struct point {
 };
 
 
+long double euclidean_distance(const point& p1, const point& p2) {
+    return std::sqrt(std::pow(p1.x - p2.x, 2) + std::pow(p1.y - p2.y, 2));
+}
+
+
 class triange {
 private:
     std::vector<point> m_points;
@@ -84,11 +89,6 @@ public:
             }
         }
 
-        /* inidicate that we cannot do anything */
-        if ((square1 == 0.0) && (square2 == 0.0)) {
-            throw std::exception();
-        }
-
         std::int64_t index_triangle = 0;
 
         long double square1_wo_argue = square1;
@@ -118,10 +118,10 @@ public:
             middle = { x, y };
 
             triange left_tr({ m_door, left, middle });
-            triange right_tr({ m_door, middle, right });
+            triange full_tr({ m_door, left, right });
 
             square1 += left_tr.square();
-            square2 += right_tr.square();
+            square2 += (full_tr.square() - left_tr.square());
 
             if (square1 > square2) {
                 right = middle;
@@ -131,8 +131,7 @@ public:
                 left = middle;
                 square1_wo_argue = square1; /* we can assign this square to 1 */
             }
-        } 
-        while (std::abs(left.x - right.x) + std::abs(left.y - right.y) > 0.000001);
+        } while (euclidean_distance(left, right) > 0.0000001);
 
         return middle;
     }
@@ -156,7 +155,7 @@ int main() {
     }
 
     point r = solution(p).divide();
-    std::cout << std::setprecision(30) << r.x << " " << r.y << std::endl;
+    std::cout << std::setprecision(50) << r.x << " " << r.y << std::endl;
 
     return 0;
 }
