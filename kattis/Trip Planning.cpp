@@ -1,3 +1,53 @@
+#if 1
+
+#include <iostream>
+#include <vector>
+
+
+int main() {
+    int n, m;
+    std::cin >> n >> m;
+
+    std::vector<int> stops(n);
+    int routes = 0;
+    for (int i = 0; i < m; ++i) {
+        int from, to;
+        std::cin >> from >> to;
+
+        from--;
+        to--;
+
+        const int lnode = std::min(from, to);
+        const int rnode = std::max(from, to);
+        const int order_diff = rnode - lnode;
+
+        if (lnode == 0 && rnode == n - 1) {
+            stops[rnode] = i + 1;
+            routes++;
+        }
+
+        if (order_diff == 1) {
+            stops[lnode] = i + 1;
+            routes++;
+        }
+    }
+
+    if (routes != n) {
+        std::cout << "impossible" << '\n';
+    }
+    else {
+        for (const auto stop : stops) {
+            std::cout << stop << '\n';
+        }
+    }
+
+    return 0;
+}
+
+#else
+	
+/* acceptable, but slower - builds graph and checks reachability of the next node */
+
 #include <iostream>
 #include <vector>
 #include <unordered_map>
@@ -43,3 +93,5 @@ int main() {
 
     return 0;
 }
+
+#endif
