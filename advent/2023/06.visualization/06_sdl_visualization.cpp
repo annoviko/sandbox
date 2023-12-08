@@ -1,7 +1,35 @@
 #include <SDL.h>
 #include <SDL_image.h>
 
+#include <cmath>
 #include <vector>
+
+
+void draw_filled_circle(SDL_Renderer* renderer, int center_x, int center_y, int radius) {
+    int x = radius;
+    int y = 0;
+    int radius_error = 1 - x;
+
+    while (x >= y) {
+        SDL_RenderDrawLine(renderer, center_x - x, center_y + y, center_x + x, center_y + y);
+        SDL_RenderDrawLine(renderer, center_x - x, center_y - y, center_x + x, center_y - y);
+
+        if (x != y) {
+            SDL_RenderDrawLine(renderer, center_x - y, center_y + x, center_x + y, center_y + x);
+            SDL_RenderDrawLine(renderer, center_x - y, center_y - x, center_x + y, center_y - x);
+        }
+
+        y++;
+
+        if (radius_error < 0) {
+            radius_error += 2 * y + 1;
+        }
+        else {
+            x--;
+            radius_error += 2 * (y - x + 1);
+        }
+    }
+}
 
 
 int main(int argc, char* argv[]) {
@@ -40,6 +68,8 @@ int main(int argc, char* argv[]) {
     const int DELAY = 20;
     const int STATE_SHOW_TRANSITION = 500;
     const int STATE_MOVE_TRANSITION = 32;
+
+    const int STATE_FINAL_PARABOLA_DELAY = 300;
     const int STATE_FINAL_TRANSITION = 4000;
 
     int state = STATE_SHOW;
@@ -73,8 +103,6 @@ int main(int argc, char* argv[]) {
 
             SDL_RenderCopy(renderer, boat_texture, NULL, &p);
         }
-
-        SDL_RenderPresent(renderer);
 
         switch (state) {
             case STATE_SHOW: {
@@ -122,10 +150,39 @@ int main(int argc, char* argv[]) {
                     global_time = 0;
                     boats_x_position = std::vector<int>(boats_x_position.size(), 0);
                 }
+                else {
+                    int total_steps = STATE_FINAL_TRANSITION / DELAY;
+                    int steps_to_draw = total_steps >> 1;
+                    int boats_per_step = std::ceil(steps_to_draw / boats_x_position.size());
+
+                    SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+
+                    for (int i = 1; i <= state_value; i++) {
+                        if (i >= boats_x_position.size()) {
+                            continue;
+                        }
+
+                        int x1 = boats_x_position[i - 1] + 32;
+                        int x2 = boats_x_position[i] + 32;
+
+                        int y1 = 920 - 64 * i + 32;
+                        int y2 = 920 - 64 * (i + 1) + 32;
+
+                        draw_filled_circle(renderer, x1, y1, 10);
+                        draw_filled_circle(renderer, x2, y2, 10);
+
+                        for (int k = 0; k < 2; k++) {
+                            SDL_RenderDrawLine(renderer, x1, y1 + 1, x2, y2 + 1);
+                            SDL_RenderDrawLine(renderer, x1, y1, x2, y2);
+                            SDL_RenderDrawLine(renderer, x1, y1 - 1, x2, y2 - 1);
+                        }
+                    }
+                }
                 break;
             }
         }
 
+        SDL_RenderPresent(renderer);
         SDL_Delay(15);
     }
 
