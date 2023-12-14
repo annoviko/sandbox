@@ -2,6 +2,7 @@
 #include <fstream>
 #include <string>
 #include <vector>
+#include <unordered_map>
 
 
 using mirror_t = std::vector<std::string>;
@@ -19,8 +20,8 @@ public:
         std::int64_t result = 0;
 
         for (const auto& m : mirrors) {
-            std::int64_t horizontal = find_left_reflection(m);
-            std::int64_t vertical = find_left_reflection(transpose(m));
+            std::int64_t horizontal = find_left_reflection(m, 0);
+            std::int64_t vertical = find_left_reflection(transpose(m), 0);
 
             std::int64_t mirror_score = vertical + horizontal * 100;
             result += mirror_score;
@@ -28,6 +29,22 @@ public:
 
         return result;
     }
+
+
+    std::int64_t fix_and_analyse() {
+        std::int64_t result = 0;
+
+        for (const auto& m : mirrors) {
+            std::int64_t horizontal = find_left_reflection(m, 1);
+            std::int64_t vertical = find_left_reflection(transpose(m), 1);
+
+            std::int64_t mirror_score = vertical + horizontal * 100;
+            result += mirror_score;
+        }
+
+        return result;
+    }
+
 
 private:
     mirror_t transpose(const mirror_t& m) {
@@ -46,59 +63,89 @@ private:
         return tm;
     }
 
-    std::int64_t find_left_reflection(const std::vector<std::string>& m) {
-        std::vector<std::uint64_t> hashes;
 
-        std::vector<std::size_t> left_reflection_indexes;
+    std::vector<std::uint64_t> build_hash(const std::vector<std::string>& m) {
+        std::vector<std::uint64_t> hashes;
 
         for (const std::string& line : m) {
             std::uint64_t hash_value = 0;
             for (std::size_t i = 0; i < line.size(); i++) {
                 hash_value <<= 1;
 
-                if (line[i] == '#') {
+                if (line[i] == '.') {
                     hash_value++;
-                }
-            }
-
-            if (hashes.size() > 0) {
-                if (hashes.back() == hash_value) {
-                    left_reflection_indexes.push_back(hashes.size() - 1);    /* add point to consider reflection later */
                 }
             }
 
             hashes.push_back(hash_value);
         }
 
+        return hashes;
+    }
+
+
+    std::uint64_t count_bits(std::uint64_t value) {
+        std::uint64_t counter = 0;
+        while (value) {
+            value = value & (value - 1);
+            counter++;
+        }
+        return counter;
+    }
+
+
+    bool is_suitable_for_bit_change(const std::uint64_t v1, const std::uint64_t v2) {
+        std::uint64_t diff = v1 ^ v2;
+        std::uint64_t diff_size = count_bits(diff);
+
+        if (diff_size != 1) {
+            return false;
+        }
+
+        return true;
+    }
+
+
+    std::uint64_t get_reflection_size(const std::vector<std::uint64_t>& hashes, std::size_t lborder, std::size_t rborder, std::size_t required_difference) {
+        std::size_t actual_reflection_size = 0;
+        std::size_t patch_applied = false;
+
+        std::size_t difference_counter = 0;
+
+        for (; (lborder != -1) && (rborder < hashes.size()); lborder--, rborder++) {
+            const auto v1 = hashes[lborder];
+            const auto v2 = hashes[rborder];
+
+            if (v1 != v2) {
+                const std::uint64_t diff = v1 ^ v2;
+                const std::uint64_t diff_size = count_bits(diff);
+
+                difference_counter += diff_size;
+            }
+
+            actual_reflection_size++;
+        }
+
+        if (required_difference != difference_counter) {
+            return 0;
+        }
+
+        return actual_reflection_size;
+    }
+
+
+    std::int64_t find_left_reflection(const std::vector<std::string>& m, const std::size_t required_difference) {
+        std::vector<std::uint64_t> hashes = build_hash(m);
 
         std::size_t best_reflection_index = -1;
         std::size_t best_reflection_size = 0;
-        std::size_t debug_suitable_reflections = 0;
 
-        for (std::size_t left_index : left_reflection_indexes) {
-            std::size_t lborder = left_index;
-            std::size_t rborder = left_index + 1;
-
-            std::size_t actual_reflection_size = 0;
-            bool is_reflection = true;
-
-            for (; (lborder != -1) && (rborder < hashes.size()); lborder--, rborder++) {
-                if (hashes[lborder] != hashes[rborder]) {
-                    is_reflection = false;
-                    break;  /* it is not reflection */
-                }
-
-                actual_reflection_size++;
-            }
-
-            if (!is_reflection) {
-                continue;   /* it is not reflection */
-            }
+        for (std::size_t left_index = 0; left_index + 1 < hashes.size(); left_index++) {
+            std::uint64_t actual_reflection_size = get_reflection_size(hashes, left_index, left_index + 1, required_difference);
 
             if (actual_reflection_size > best_reflection_size) {
                 best_reflection_index = left_index;
                 best_reflection_size = actual_reflection_size;
-                debug_suitable_reflections++;
             }
         }
 
@@ -134,6 +181,7 @@ int main() {
     auto input = read_input();
 
     std::cout << "The number after summarizing all of your notes: " << solution(input).analyse() << std::endl;
+    std::cout << "The number after summarizing all of your notes (with new reflection line): " << solution(input).fix_and_analyse() << std::endl;
 
     return 0;
 }
