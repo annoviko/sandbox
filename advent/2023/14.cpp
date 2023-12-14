@@ -50,6 +50,10 @@ public:
         /* find loop*/
         std::int64_t actual_simulation_steps = 0;
         std::int64_t loop_size = 0;
+        std::int64_t attempts = 0;
+
+        const std::int64_t loop_size_threshold = 100;
+
         while (true) {
             spin();
 
@@ -60,10 +64,15 @@ public:
                 break;
             }
 
-            if (loop_size > 100) {
+            if (loop_size > loop_size_threshold) {
                 /* stabilization point is not found yet - set new fix point */
                 fix_point = map;
                 loop_size = 0;
+                
+                if (++attempts > 10) {
+                    std::cout << "Too much attempts to find loop, increase `loop_size_threshold` variable, looks like loop is bigger." << std::endl;
+                    std::exit(-1);
+                }
             }
         }
 
