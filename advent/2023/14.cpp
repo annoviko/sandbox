@@ -1,6 +1,5 @@
 #include <iostream>
 #include <fstream>
-#include <list>
 #include <vector>
 #include <string>
 
@@ -20,14 +19,10 @@ std::vector<std::string> read_input() {
 class solution {
     std::vector<std::string> map;
 
-    std::vector<std::vector<int>> north_to_rock;    /* points to the first free index below rock */
-
 public:
     solution(const std::vector<std::string>& _plt) : 
-        map(_plt), north_to_rock(_plt.size())
-    {
-        build_north_to_rock();
-    }
+        map(_plt)
+    { }
 
 public:
     std::int64_t count_north_load() {
@@ -49,39 +44,143 @@ public:
         return result;
     }
 
+    std::int64_t count_north_load_after_spin_cycle() {
+        auto fix_point = map;
+        
+        /* find loop*/
+        std::int64_t actual_simulation_steps = 0;
+        std::int64_t loop_size = 0;
+        while (true) {
+            spin();
+
+            loop_size++;
+            actual_simulation_steps++;
+
+            if (fix_point == map) {
+                break;
+            }
+
+            if (loop_size > 100) {
+                /* stabilization point is not found yet - set new fix point */
+                fix_point = map;
+                loop_size = 0;
+            }
+        }
+
+        /* find steps to get final state */
+        std::int64_t remaining_steps = 1000000000 - actual_simulation_steps;
+        remaining_steps = remaining_steps % loop_size;
+
+        /* simulate until final step */
+        for (int i = 0; i < remaining_steps; i++) {
+            spin();
+        }
+
+        /* count result */
+        std::int64_t result = 0;
+        for (int row = 0; row < map.size(); row++) {
+            std::int64_t rocks = 0;
+            for (int col = 0; col < map[row].size(); col++) {
+                if (map[row][col] == 'O') {
+                    rocks++;
+                }
+            }
+
+            result += rocks * (map.size() - row);
+        }
+
+        return result;
+    }
+
+    void print() {
+        std::cout << std::endl;
+
+        for (auto& r : map) {
+            std::cout << r << std::endl;
+        }
+
+        std::cout << std::endl;
+    }
+
 private:
+    void spin() {
+        tilt_north();
+        tilt_west();
+        tilt_south();
+        tilt_east();
+    }
+
     void tilt_north() {
-        for (int r = map.size() - 1; r >= 0; r--) {
+        for (int r = 0; r < map.size(); r++) {
             for (int c = 0; c < map[r].size(); c++) {
                 if (map[r][c] == 'O') {
                     map[r][c] = '.';
 
-                    int row_below_rock = north_to_rock[r][c];
-                    while (map[row_below_rock][c] != '.') {
-                        row_below_rock++;
+                    int current_free = r;
+                    for (int i = current_free; i >= 0 && map[i][c] != '#'; i--) {
+                        if (map[i][c] == '.') {
+                            current_free = i;
+                        }
                     }
 
-                    map[row_below_rock][c] = 'O';
+                    map[current_free][c] = 'O';
                 }
             }
         }
     }
 
-    void build_north_to_rock() {
-        std::vector<int> current_rocks(map.size(), 0);
-
-        for (int r = 0; r < map.size(); r++) {
-            if (north_to_rock[r].empty()) {
-                north_to_rock[r] = std::vector<int>(map[r].size());
-            }
-
+    void tilt_south() {
+        for (int r = map.size() - 1; r >= 0; r--) {
             for (int c = 0; c < map[r].size(); c++) {
-                if (map[r][c] == '#') {
-                    current_rocks[c] = r + 1;
-                    north_to_rock[r][c] = -1;
+                if (map[r][c] == 'O') {
+                    map[r][c] = '.';
+
+                    int current_free = r;
+                    for (int i = current_free; i < map.size() && map[i][c] != '#'; i++) {
+                        if (map[i][c] == '.') {
+                            current_free = i;
+                        }
+                    }
+
+                    map[current_free][c] = 'O';
                 }
-                else {
-                    north_to_rock[r][c] = current_rocks[c];
+            }
+        }
+    }
+
+    void tilt_west() {
+        for (int c = 0; c < map[0].size(); c++) {
+            for (int r = 0; r < map.size(); r++) {
+                if (map[r][c] == 'O') {
+                    map[r][c] = '.';
+
+                    int current_free = c;
+                    for (int i = current_free; i >= 0 && map[r][i] != '#'; i--) {
+                        if (map[r][i] == '.') {
+                            current_free = i;
+                        }
+                    }
+
+                    map[r][current_free] = 'O';
+                }
+            }
+        }
+    }
+
+    void tilt_east() {
+        for (int c = map[0].size() - 1; c >= 0; c--) {
+            for (int r = 0; r < map.size(); r++) {
+                if (map[r][c] == 'O') {
+                    map[r][c] = '.';
+
+                    int current_free = c;
+                    for (int i = current_free; i < map[0].size() && map[r][i] != '#'; i++) {
+                        if (map[r][i] == '.') {
+                            current_free = i;
+                        }
+                    }
+
+                    map[r][current_free] = 'O';
                 }
             }
         }
@@ -92,7 +191,10 @@ private:
 int main() {
     auto input = read_input();
 
+
+
     std::cout << "The total load on the north support beams: " << solution(input).count_north_load() << std::endl;
+    std::cout << "The total load on the north support beams after spin cycle: " << solution(input).count_north_load_after_spin_cycle() << std::endl;
 
     return 0;
 }
