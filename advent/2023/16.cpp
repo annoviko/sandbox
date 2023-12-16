@@ -39,22 +39,49 @@ struct beam {
 };
 
 
-class solution {
+class beam_tracker {
     std::vector<std::vector<std::vector<bool>>> cache;    /* [row][col][direction] */
 
     std::vector<std::vector<bool>> visited;
     std::vector<std::string> map;
 
 public:
-    solution(const std::vector<std::string>& _map) : map(_map) {
+    beam_tracker(const std::vector<std::string>& _map) : 
+        map(_map)
+    {
         cache = std::vector<std::vector<std::vector<bool>>>(map.size(), std::vector<std::vector<bool>>(map[0].size(), std::vector<bool>(4, false)));
         visited = std::vector<std::vector<bool>>(map.size(), std::vector<bool>(map[0].size(), false));
     }
 
 public:
-    std::int64_t analyse() {
+    std::int64_t analyse_best_configuration() {
+        std::int64_t best_result = 0;
+        for (int i = 0; i < map.size(); i++) {
+            best_result = std::max(analyse(beam{ { -1, i }, DOWN }), best_result);
+            clean_cache();
+
+            best_result = std::max(analyse(beam{ { (int) map.size(), i }, UP }), best_result);
+            clean_cache();
+        }
+
+        for (int i = 0; i < map[0].size(); i++) {
+            best_result = std::max(analyse(beam{ { i, -1 }, RIGHT }), best_result);
+            clean_cache();
+
+            best_result = std::max(analyse(beam{ { i, (int) map[0].size() }, LEFT }), best_result);
+            clean_cache();
+        }
+
+        return best_result;
+    }
+
+    std::int64_t analyse_basic_configuration() {
+        return analyse(beam{ { 0, -1 }, RIGHT });
+    }
+
+    std::int64_t analyse(const beam& initial) {
         std::queue<beam> to_process;
-        to_process.push(beam{ { 0, -1 }, RIGHT });
+        to_process.push(initial);
 
         std::int64_t counter = 0;
 
@@ -134,7 +161,12 @@ public:
         return counter;
     }
 
-public:
+private:
+    void clean_cache() {
+        cache = std::vector<std::vector<std::vector<bool>>>(map.size(), std::vector<std::vector<bool>>(map[0].size(), std::vector<bool>(4, false)));
+        visited = std::vector<std::vector<bool>>(map.size(), std::vector<bool>(map[0].size(), false));
+    }
+
     bool is_inside(int r, int c) {
         return r >= 0 && r < map.size() && c >= 0 && c < map[0].size();
     }
@@ -216,7 +248,8 @@ public:
 int main() {
     auto input = read_input();
 
-    std::cout << "Energized tiles: " << solution(input).analyse() << std::endl;
+    std::cout << "Energized tiles (basic config): " << beam_tracker(input).analyse_basic_configuration() << std::endl;
+    std::cout << "Energized tiles (the best config): " << beam_tracker(input).analyse_best_configuration() << std::endl;
 
     return 0;
 }
