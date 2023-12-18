@@ -23,7 +23,47 @@ using instruction_vec = std::vector<instruction>;
 
 class solution {
 public:
-    std::int64_t count_bfs_area(const instruction_vec& instr_vec) {
+    std::int64_t area_by_geometry(const instruction_vec& instr_vec) {   /* O(N), where N - instructions */
+        std::vector<std::pair<std::int64_t, std::int64_t>> points = { { 0, 0 } };
+
+        std::int64_t row = 0;
+        std::int64_t col = 0;
+
+        std::int64_t boundary_points = 0;
+
+        for (auto& instr : instr_vec) {
+            auto step = get_step(instr.dir);
+
+            row += step.first * instr.len;
+            col += step.second * instr.len;
+            boundary_points += instr.len;
+
+            points.push_back({ row, col });
+        }
+
+        /* Shoelace formula */
+        std::int64_t area = 0;
+        for (int i = 0; i < points.size(); i++) {
+            std::int64_t x = points[i].first;
+            std::int64_t y_next = (i + 1 < points.size()) ? points[i + 1].second : points.front().second;
+            std::int64_t y_prev = (i - 1 >= 0) ? points[i - 1].second : points.back().second;
+
+            area += x * (y_next - y_prev);
+        }
+
+        area = std::abs(area / 2);  /* internal area */
+        
+        /* Pick's theorem */
+        std::int64_t i = area - boundary_points / 2 + 1;    /* interior points */
+
+        std::int64_t total_area = i + boundary_points;  /* area = interior points + boundary points */
+        return total_area;
+    }
+
+
+    std::int64_t area_by_bfs(const instruction_vec& instr_vec) {    /* Performance: O(M^2), Memory: O(M), where M - actual values in space */
+        /* Can be used for the part 1, no way for part 2 (too slow) */
+
         /* build borders */
         map m;
 
@@ -32,7 +72,7 @@ public:
         m[row][col] = true;
 
         for (const auto& instr : instr_vec) {
-            std::pair<int, int> step = get_step(instr.dir);
+            std::pair<std::int64_t, std::int64_t> step = get_step(instr.dir);
             for (int i = 0; i < instr.len; i++) {
                 row += step.first;
                 col += step.second;
@@ -42,11 +82,11 @@ public:
         }
 
         /* find borders */
-        std::int64_t lborder = std::numeric_limits<int>::max();
-        std::int64_t rborder = std::numeric_limits<int>::min();
+        std::int64_t lborder = std::numeric_limits<std::int64_t>::max();
+        std::int64_t rborder = std::numeric_limits<std::int64_t>::min();
 
-        std::int64_t uborder = std::numeric_limits<int>::max();
-        std::int64_t dborder = std::numeric_limits<int>::min();
+        std::int64_t uborder = std::numeric_limits<std::int64_t>::max();
+        std::int64_t dborder = std::numeric_limits<std::int64_t>::min();
 
         for (auto& r : m) {
             uborder = std::min(r.first, uborder);
@@ -183,7 +223,8 @@ instruction_vec read_input(bool elves_made_mistake) {
 
 
 int main() {
-    std::cout << "Area to keep lava: " << solution().count_bfs_area(read_input(false)) << std::endl;
+    std::cout << "Area to keep lava: " << solution().area_by_geometry(read_input(false)) << std::endl;
+    std::cout << "Area to keep lava (elves realized their mistake): " << solution().area_by_geometry(read_input(true)) << std::endl;
 
     return 0;
 }
