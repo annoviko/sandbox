@@ -179,6 +179,12 @@ class network {
     std::uint64_t m_counter_high = 0;
     std::uint64_t m_counter_low = 0;
 
+    bool m_rx_low_pulse = false;
+    std::string m_rx_source = "";
+    std::uint64_t m_rx_counter = 0;
+    std::uint64_t m_sand_machine_activation = 0;
+    std::unordered_map<std::string, std::uint64_t> rx_cycle_hi;
+
 public:
     void load() {
         std::fstream stream("input.txt");
@@ -226,7 +232,7 @@ public:
 
             std::string connected_modules = line.substr(position + 3);
             std::size_t valid_position = 0;
-            
+
             for (position = connected_modules.find(','); position != std::string::npos; position = connected_modules.find(',', position)) {
                 std::string neighbor_name = connected_modules.substr(valid_position, position - valid_position);
 
@@ -249,24 +255,45 @@ public:
                 }
 
                 m_modules[nei]->register_input_source(source);
+                if (m_connections[nei][0] == "rx") {
+                    m_rx_source = nei;
+                }
+            }
+        }
+
+        for (const auto& pair : m_connections) {
+            std::string source = pair.first;
+            for (const std::string& nei : pair.second) {
+                if (nei == m_rx_source) {
+                    rx_cycle_hi[source] = 0;
+                }
             }
         }
     }
 
-    void simulate(const std::int64_t runs) {
+    std::int64_t simulate(const std::int64_t runs) {
         for (std::int64_t i = 0; i < runs; i++) {
-            stats_t run_stats = press_button();
+            stats_t run_stats = press_button(i);
 
             m_counter_high += run_stats.counter_high;
             m_counter_low += run_stats.counter_low;
         }
 
-        std::int64_t result = m_counter_high * m_counter_low;
-        std::cout << "Multiplication of sent pulses: " << result << std::endl;
+        std::uint64_t result = m_counter_high * m_counter_low;
+        return result;
+    }
+
+    std::int64_t count_runs_to_activate_sand_machine() {
+        std::uint64_t runs = 1;
+        for (; m_rx_low_pulse != true; runs++) {
+            press_button(runs);
+        }
+
+        return m_sand_machine_activation;
     }
 
 private:
-    stats_t press_button() {
+    stats_t press_button(const std::uint64_t p_run_number) {
         stats_t stats = { 0, 0 };
 
         std::list<std::string> queue;
@@ -299,6 +326,23 @@ private:
                         std::cout << module_name << " -" << (output_pulse == pulse_t::LOW ? "low" : "high") << "-> " << nei_name << std::endl;
 #endif
 
+                        if ((nei_name == m_rx_source) && (output_pulse == pulse_t::HIGH)) {
+                            if (rx_cycle_hi[module_name] == 0) {
+                                rx_cycle_hi[module_name] = p_run_number;
+                                m_rx_counter++;
+
+                                if (m_rx_counter == rx_cycle_hi.size()) {
+                                    std::uint64_t result = 1;
+                                    for (const auto& pair : rx_cycle_hi) {
+                                        result *= pair.second;
+                                    }
+
+                                    m_sand_machine_activation = result;
+                                    m_rx_low_pulse = true;
+                                }
+                            }
+                        }
+
                         auto iter_nei = m_modules.find(nei_name);
                         if (iter_nei == m_modules.end()) {
                             continue;
@@ -328,10 +372,21 @@ private:
 
 
 int main() {
-    network sand_flow_network;
+    {
+        network sand_flow_network;
+        sand_flow_network.load();
+        std::uint64_t result = sand_flow_network.simulate(1000);
 
-    sand_flow_network.load();
-    sand_flow_network.simulate(1000);
+        std::cout << "Multiplication of sent pulses: " << result << std::endl;
+    }
+
+    {
+        network sand_flow_network;
+        sand_flow_network.load();
+        std::uint64_t result = sand_flow_network.count_runs_to_activate_sand_machine();
+
+        std::cout << "The number of time when the button is needed to be pressed to run the machine: " << result << std::endl;
+    }
 
     return 0;
 }
