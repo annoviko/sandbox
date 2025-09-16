@@ -1,6 +1,6 @@
 # 🎄 Advent of Code 2020 🎄
 
-This repository contains my C++ solutions for [Advent of Code 2020](https://adventofcode.com/2020), an annual set of programming puzzles created by Eric Wastl.  
+This repository section contains my C++ solutions for [Advent of Code 2020](https://adventofcode.com/2020), an annual set of programming puzzles created by Eric Wastl.  
 
 Each day of December unlocks a two-part puzzle, starting easy and getting progressively harder. They are a fun mix of algorithmic thinking, problem-solving, and sometimes even a little math.  
 
