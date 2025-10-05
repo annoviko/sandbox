@@ -32,46 +32,23 @@ private:
     int y_max = 0;
     int z_max = 0;
 
-    std::unordered_map<int, std::vector<int>> g;    /* graph [id] -> [supporters] */
+    std::vector<std::vector<int>> gf;                       /* graph [id] -> [who is supported by id] */
+    std::unordered_map<int, std::unordered_set<int>> gl;    /* graph [id] -> [who supports id] */
 
 public:
     solution(const std::vector<block>& b) :
-        blocks(b)
+        blocks(b),
+        gf(b.size())
     {
         initialize_field();
         stabilize();
         place_blocks_on_field();
+
+        build_graph();
     }
 
 public:
     int count_disintegratable_blocks() {
-        std::vector<std::vector<int>> gf(blocks.size());        /* graph [id] -> [who is supported by id] */
-        std::unordered_map<int, std::unordered_set<int>> gl;    /* graph [id] -> [who supports id] */
-
-        std::unordered_set<int> visited;
-        for (int z = z_max; z >= 0; z--) {
-            for (int x = 0; x <= x_max; x++) {
-                for (int y = 0; y <= y_max; y++) {
-                    if (field[x][y][z] == -1) {
-                        continue;
-                    }
-
-                    if (visited.count(field[x][y][z]) > 0) {
-                        continue;
-                    }
-
-                    visited.insert(field[x][y][z]);
-
-                    auto supporters = find_supporters(field[x][y][z], x, y, z);
-
-                    gl[field[x][y][z]] = supporters;
-                    for (int id_supporter : supporters) {
-                        gf[id_supporter].push_back(field[x][y][z]);
-                    }
-                }
-            }
-        }
-
         int counter = 0;
         for (int id = 0; id < blocks.size(); id++) {
             if (gf[id].size() == 0) {
@@ -97,7 +74,78 @@ public:
         return counter;
     }
 
+    int chain_reaction() {
+        int counter = 0;
+
+        std::vector<int> dp(blocks.size(), -1);
+
+        for (int id = 0; id < blocks.size(); id++) {
+            if (gf[id].size() == 0) {
+                continue;   /* a block does not support anyone - nothing will change */
+            }
+
+            counter += trigger_reaction(id);
+        }
+
+        return counter;
+    }
+
 private:
+    int trigger_reaction(int start_id) {
+        std::vector<int> inc_conn(blocks.size(), 0);
+        for (int i = 0; i < blocks.size(); i++) {
+            inc_conn[i] = gl[i].size();
+        }
+
+        std::queue<int> to_proc;
+        to_proc.push(start_id);
+
+        int counter = 0;
+
+        while (!to_proc.empty()) {
+            int cur_id = to_proc.front();
+            to_proc.pop();
+
+            for (int nei_id : gf[cur_id]) {
+                inc_conn[nei_id]--;
+
+                if (inc_conn[nei_id] == 0) {
+                    to_proc.push(nei_id);
+                    counter++;
+                }
+            }
+        }
+
+        return counter;
+    }
+
+    void build_graph() {
+        std::unordered_set<int> visited;
+        for (int z = z_max; z >= 0; z--) {
+            for (int x = 0; x <= x_max; x++) {
+                for (int y = 0; y <= y_max; y++) {
+                    if (field[x][y][z] == -1) {
+                        continue;
+                    }
+
+                    if (visited.count(field[x][y][z]) > 0) {
+                        continue;
+                    }
+
+                    visited.insert(field[x][y][z]);
+
+                    auto supporters = find_supporters(field[x][y][z], x, y, z);
+
+                    gl[field[x][y][z]] = supporters;
+                    for (int id_supporter : supporters) {
+                        gf[id_supporter].push_back(field[x][y][z]);
+                    }
+                }
+            }
+        }
+    }
+
+
     void stabilize() {
         std::sort(blocks.begin(), blocks.end(), [](const block& l, const block& r) {
             return l.begin.z < r.begin.z;
@@ -240,9 +288,13 @@ std::vector<block> read_input() {
 int main() {
     std::vector<block> input = read_input();
 
-    int count = solution(input).count_disintegratable_blocks();
+    solution s{ input };
+    int count = s.count_disintegratable_blocks();
 
     std::cout << "Bricks could be safely chosen as the one to get disintegrated: " << count << std::endl;
+
+    count = s.chain_reaction();
+    std::cout << "The sum of the number of other bricks that would fall: " << count << std::endl;
 
     return 0;
 }
