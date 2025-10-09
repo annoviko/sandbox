@@ -70,11 +70,13 @@ private:
             return 1;
         }
 
+#if 0
         std::uint64_t debug_value = -1;
         auto iter = m_cache.find(p);
         if (iter != m_cache.cend()) {
             debug_value = iter->second;
         }
+#endif
 
         m_visited[p.r][p.c] = true;
 
@@ -135,7 +137,12 @@ private:
             }
         }
 
+#if 0
+        if (debug_value != -1 && debug_value < distance) {
+            std::cout << "Problem detected." << std::endl;
+        }
         m_cache[p] = distance;
+#endif
         m_visited[p.r][p.c] = false;
         return distance;
     }
