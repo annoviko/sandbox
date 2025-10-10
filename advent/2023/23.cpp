@@ -3,6 +3,7 @@
 #include <vector>
 #include <string>
 #include <map>
+#include <set>
 #include <iostream>
 
 
@@ -44,11 +45,18 @@ public:
 };
 
 
+struct nei_t {
+    position_t p;
+    int w;
+};
+
+using graph_t = std::map<position_t, std::vector<nei_t>>;
+
 class solution {
 private:
     field_t m_field;
     std::vector<std::vector<bool>> m_visited;
-    std::map<position_t, int> m_cache;
+    graph_t m_g;
     bool m_is_slippery = true;
 
 public:
@@ -56,95 +64,196 @@ public:
         m_field(field),
         m_is_slippery(is_slippery),
         m_visited(m_field.size(), std::vector<bool>(m_field[0].size(), false))
-    { }
+    {
+        build_graph();
+    }
 
 public:
     std::uint64_t find_longest_trail() {
         position_t begin{ 0, m_field[0].find('.') };
-        return dfs(begin) - 1;
+        return dfs({ begin, 0 });
     }
 
 private:
-    std::uint64_t dfs(const position_t& p) {
-        if (p.r == m_field.size() - 1) {
-            return 1;
+    std::uint64_t dfs(const nei_t& n) {
+        if (n.p.r == m_field.size() - 1) {
+            return n.w;
         }
 
-#if 0
-        std::uint64_t debug_value = -1;
-        auto iter = m_cache.find(p);
-        if (iter != m_cache.cend()) {
-            debug_value = iter->second;
-        }
-#endif
-
-        m_visited[p.r][p.c] = true;
-
-        const std::vector<position_t> neis = {
-            { p.r + 1, p.c },
-            { p.r - 1, p.c },
-            { p.r, p.c + 1 },
-            { p.r, p.c - 1 },
-        };
+        m_visited[n.p.r][n.p.c] = true;
 
         std::uint64_t distance = 0;
 
-        for (const position_t nei : neis) {
-            if (nei.r >= m_field.size() || nei.r < 0 || nei.c >= m_field[0].size() || nei.c < 0) {
-                continue;
-            }
-
-            if (m_field[nei.r][nei.c] == '#') {
-                continue;
-            }
-
-            bool is_acceptable = true;
-            if (m_is_slippery) {
-                switch (m_field[nei.r][nei.c]) {
-                case '>':
-                    is_acceptable = (nei == position_t{ p.r, p.c + 1 });
-                    break;
-
-                case '<':
-                    is_acceptable = (nei == position_t{ p.r, p.c - 1 });
-                    break;
-
-                case '^':
-                    is_acceptable = (nei == position_t{ p.r - 1, p.c });
-                    break;
-
-                case 'v':
-                    is_acceptable = (nei == position_t{ p.r + 1, p.c });
-                    break;
-
-                default:
-                    break;
-                }
-            }
-
-            if (!is_acceptable) {
-                continue;
-            }
-
-            if (m_visited[nei.r][nei.c]) {
+        for (const nei_t& nei : m_g[n.p]) {
+            if (m_visited[nei.p.r][nei.p.c]) {
                 continue;
             }
 
             std::uint64_t nei_dist = dfs(nei);
-            if (nei_dist > 0) {
-                /* there is a path in this branch */
-                distance = std::max(distance, nei_dist + 1);
+            if (nei_dist) {
+                distance = std::max(distance, nei_dist + n.w);
             }
         }
 
-#if 0
-        if (debug_value != -1 && debug_value < distance) {
-            std::cout << "Problem detected." << std::endl;
-        }
-        m_cache[p] = distance;
-#endif
-        m_visited[p.r][p.c] = false;
+        m_visited[n.p.r][n.p.c] = false;
         return distance;
+    }
+
+    void build_graph() {
+        position_t begin{ 0, m_field[0].find('.') };
+
+        std::set<position_t> visited;
+        visited.insert(begin);
+
+        std::queue<position_t> to_proc;
+        to_proc.push(begin);
+
+        while (!to_proc.empty()) {
+            position_t cur = to_proc.front();
+            to_proc.pop();
+
+            std::map<position_t, int> neis = find_neighbors(cur.r, cur.c);
+
+            for (const auto& n : neis) {
+                m_g[{ cur.r, cur.c }].push_back({ n.first, n.second });
+                if (visited.count(n.first) > 0) {
+                    continue;
+                }
+
+                visited.insert(n.first);
+                to_proc.push(n.first);
+            }
+        }
+    }
+
+    void print_graph() {
+        std::cout << std::endl;
+        for (const auto& pair : m_g) {
+            std::cout << '(' << pair.first.r << ", " << pair.first.c << "): [";
+            for (const auto& nei : pair.second) {
+                std::cout << " (" << nei.p.r << ", " << nei.p.c << " - " << nei.w << ')';
+            }
+            std::cout << " ]" << std::endl;
+        }
+    }
+
+    std::vector<position_t> get_neighbors(const position_t& cur) {
+        const std::vector<position_t> dirs = {
+            { cur.r + 1, cur.c },
+            { cur.r - 1, cur.c },
+            { cur.r, cur.c + 1 },
+            { cur.r, cur.c - 1 },
+        };
+
+        std::vector<position_t> neis;
+        for (const auto& d : dirs) {
+            if (d.r < 0 || d.r >= m_field.size() || d.c < 0 || d.c >= m_field[0].size()) {
+                continue;
+            }
+
+            if (m_field[d.r][d.c] == '#') {
+                continue;
+            }
+
+            if (m_is_slippery && !is_slope_neighbor(cur, d)) {
+                continue;
+            }
+
+            neis.push_back(d);
+        }
+
+        return neis;
+    }
+
+    bool is_slope_neighbor(const position_t slope, const position_t neibour) {
+        bool is_acceptable = true;
+        if (m_is_slippery) {
+            switch (m_field[slope.r][slope.c]) {
+            case '>':
+                is_acceptable = (neibour.c > slope.c);
+                break;
+            case '<':
+                is_acceptable = (neibour.c < slope.c);
+                break;
+            case '^':
+                is_acceptable = (neibour.r < slope.r);
+                break;
+            case 'v':
+                is_acceptable = (neibour.r > slope.r);
+                break;
+            case '#':
+                is_acceptable = false;
+                break;
+            case '.':
+                is_acceptable = true;
+                break;
+            }
+        }
+
+        return is_acceptable;
+    }
+
+    bool is_crossroad_cell(const position_t& p) {
+        return (p.r == 0) || (p.r == m_field.size() - 1) || get_neighbors(p).size() > 2;
+    }
+
+    std::map<position_t, int> find_neighbors(int r, int c) {
+        std::queue<position_t> to_proc;
+        to_proc.push({ r, c });
+
+        std::vector<std::vector<bool>> visited{ m_field.size(), std::vector<bool>(m_field[0].size(), false) };
+        visited[r][c] = true;
+
+        std::map<position_t, int> neis;
+        std::queue<position_t> next;
+
+        int distance = 0;
+
+        while (!to_proc.empty() || !next.empty()) {
+            if (to_proc.empty()) {
+                distance++;
+                to_proc = std::move(next);
+            }
+
+            position_t cur = to_proc.front();
+            to_proc.pop();
+
+            if (!(r == cur.r && c == cur.c) && is_crossroad_cell(cur)) {
+                auto iter = neis.find(cur);
+                if (iter != neis.cend()) {
+                    iter->second = std::max(iter->second, distance);
+                }
+                else {
+                    neis[cur] = distance;
+                }
+                continue;
+            }
+
+            const auto dirs = get_neighbors(cur);
+
+            for (const auto& d : dirs) {
+                if (visited[d.r][d.c]) {
+                    if (d.r == r && d.c == c) {
+                        continue;
+                    }
+
+                    bool is_crossroad = is_crossroad_cell(d);
+                    if (!is_crossroad) {
+                        continue;
+                    }
+                }
+
+                visited[d.r][d.c] = true;
+
+                if (m_is_slippery && !is_slope_neighbor(cur, d)) {
+                    continue;
+                }
+
+                next.push(d);
+            }
+        }
+
+        return neis;
     }
 };
 
@@ -152,8 +261,8 @@ private:
 int main() {
     field_t field = read_input();
 
-    std::cout << solution(field, true).find_longest_trail() << std::endl;
-    std::cout << solution(field, false).find_longest_trail() << std::endl;
+    std::cout << "The longest path with slippery slopes: " << solution(field, true).find_longest_trail() << std::endl;
+    std::cout << "The longest path: " << solution(field, false).find_longest_trail() << std::endl;
 
     return 0;
 }
