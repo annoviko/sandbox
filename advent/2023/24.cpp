@@ -7,7 +7,7 @@
 #include <vector>
 
 
-const long double EPS = 1e-9;
+const long double EPS = 1e-12;
 
 
 struct position_t {
@@ -151,68 +151,172 @@ Rock and object collision:
 
 We have three coordinates:
 
-    t = (Xr - Xo) / (Vx_o - Vy_r) = (Yr - Yo) / (Vy_o - Vy_r) = (Zr - Zo) / (Vz_o - Vz_r)
+    t = (Xr - Xo) / (Vx_o - Vx_r) = (Yr - Yo) / (Vy_o - Vy_r) = (Zr - Zo) / (Vz_o - Vz_r)
 
 From this, we can eliminate t and get two equations:
 
     (Xr - Xo) / (Vx_o - Vy_r) = (Yr - Yo) / (Vy_o - Vy_r)
     (Yr - Yo) / (Vy_o - Vy_r) = (Zr - Zo) / (Vz_o - Vz_r)
+    (Xr - Xo) / (Vx_o - Vx_r) = (Zr - Zo) / (Vz_o - Vz_r)
 
 Which can be rewritten:
 
-    (Xr - Xo) * (Vy_o - Vy_r) - (Yr - Yo) * (Vx_o - Vy_r) = 0                  (1)
+    (Xr - Xo) * (Vy_o - Vy_r) - (Yr - Yo) * (Vx_o - Vx_r) = 0                  (1)
     (Yr - Yo) * (Vz_o - Vz_r) - (Zr - Zo) * (Vy_o - Vy_r) = 0                  (2)
+    (Xr - Xo) * (Vz_o - Vz_r) - (Zr - Zo) * (Vx_o - Vx_r) = 0                  (3)
 
-Open brackets for (1):
+Open brackets:
 
-    Xr * Vy_o - Xr * Vy_r - Xo * Vy_o + Xo * Vy_r    - Yr * Vx_o + Yr * Vy_r + Yo * Vx_o - Yo * Vy_r = 0     (3)
+    Xr * Vy_o - Xr * Vy_r - Xo * Vy_o + Xo * Vy_r    - Yr * Vx_o + Yr * Vx_r + Yo * Vx_o - Yo * Vx_r = 0     (4)
                 ^^^^^^^^^                                          ^^^^^^^^^
 
-We have two non-linear components for (3), which can be eliminated by substructing two hailstones:
-
-    Hailstone 1: Xr * Vy_o[1] - Xr * Vy_r - Xo[1] * Vy_o[1] + Xo[1] * Vy_r    - Yr * Vx_o[1] + Yr * Vy_r + Yo[1] * Vx_o[1] - Yo[1] * Vy_r = 0
-    Hailstone 2: Xr * Vy_o[2] - Xr * Vy_r - Xo[2] * Vy_o[2] + Xo[2] * Vy_r    - Yr * Vx_o[2] + Yr * Vy_r + Yo[2] * Vx_o[2] - Yo[2] * Vy_r = 0
-
-Their delta: 
-
-    Xr * (Vy_o[1] - Vy_o[2]) - (Xo[1] * Vy_o[1] - Xo[2] * Vy_o[2]) + Vy_r * (Xo[1] - Xo[2]) - Yr * (Vx_o[1] - Vx_o[2]) + (Yo[1] * Vx_o[1] - Yo[2] * Vx_o[2]) - Vy_r * (Yo[1] - Yo[2]) = 0
-                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^                                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-    Xr * (Vy_o[1] - Vy_o[2]) + Vy_r * (Xo[1] - Xo[2]) - Yr * (Vx_o[1] - Vx_o[2]) - Vy_r * (Yo[1] - Yo[2]) = (Xo[1] * Vy_o[1] - Xo[2] * Vy_o[2]) - (Yo[1] * Vx_o[1] - Yo[2] * Vx_o[2])    (4)
-
-Repeat the same for (2):
-
-    (Yr - Yo) * (Vz_o - Vz_r) - (Zr - Zo) * (Vy_o - Vy_r) = 0
-
-    Yr * Vz_o - Yr * Vz_r - Yo * Vz_o + Yo * Vz_r    - Zr * Vy_o + Zr * Vy_r + Zo * Vy_o - Zo * Vy_r = 0
+    Yr * Vz_o - Yr * Vz_r - Yo * Vz_o + Yo * Vz_r    - Zr * Vy_o + Zr * Vy_r + Zo * Vy_o - Zo * Vy_r = 0     (5)
                 ^^^^^^^^^                                          ^^^^^^^^^
 
-    Hailstone 1: Yr * Vz_o[1] - Yr * Vz_r - Yo[1] * Vz_o[1] + Yo[1] * Vz_r    - Zr * Vy_o[1] + Zr * Vy_r + Zo[1] * Vy_o[1] - Zo[1] * Vy_r = 0
-    Hailstone 2: Yr * Vz_o[2] - Yr * Vz_r - Yo[2] * Vz_o[2] + Yo[2] * Vz_r    - Zr * Vy_o[2] + Zr * Vy_r + Zo[2] * Vy_o[2] - Zo[2] * Vy_r = 0
+    Xr * Vz_o - Xr * Vz_r - Xo * Vz_o + Xo * Vz_r    - Zr * Vx_o + Zr * Vx_r + Zo * Vx_o - Zo * Vx_r = 0     (6)
+                ^^^^^^^^^                                          ^^^^^^^^^
 
-    Yr * (Vz_o[1] - Vz_o[2]) - (Yo[1] * Vz_o[1] - Yo[2] * Vz_o[2]) + Vz_r * (Yo[1] - Yo[2]) - Zr * (Vy_o[1] - Vy_o[2]) + (Zo[1] * Vy_o[1] - Zo[2] * Vy_o[2]) - Vy_r * (Zo[1] - Zo[2]) = 0
-                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^                                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+We have non-linear component im (4-6), eliminate by substructing two hailstones:
 
-    Yr * (Vz_o[1] - Vz_o[2]) + Vz_r * (Yo[1] - Yo[2]) - Zr * (Vy_o[1] - Vy_o[2]) - Vy_r * (Zo[1] - Zo[2]) = (Yo[1] * Vz_o[1] - Yo[2] * Vz_o[2]) - (Zo[1] * Vy_o[1] - Zo[2] * Vy_o[2])    (5)
+    For (4):
 
-Now we have linear forms in (4) and (5) for every pair of hailstones:
+        Hailstone 1: Xr * Vy_o[1] - Xr * Vy_r - Xo[1] * Vy_o[1] + Xo[1] * Vy_r    - Yr * Vx_o[1] + Yr * Vx_r + Yo[1] * Vx_o[1] - Yo[1] * Vx_r = 0
+        Hailstone 2: Xr * Vy_o[2] - Xr * Vy_r - Xo[2] * Vy_o[2] + Xo[2] * Vy_r    - Yr * Vx_o[2] + Yr * Vx_r + Yo[2] * Vx_o[2] - Yo[2] * Vx_r = 0
 
-    Xr * (Vy_o[1] - Vy_o[2]) + Vy_r * (Xo[1] - Xo[2]) - Yr * (Vx_o[1] - Vx_o[2]) - Vy_r * (Yo[1] - Yo[2]) = (Xo[1] * Vy_o[1] - Xo[2] * Vy_o[2]) - (Yo[1] * Vx_o[1] - Yo[2] * Vx_o[2])
-    Yr * (Vz_o[1] - Vz_o[2]) + Vz_r * (Yo[1] - Yo[2]) - Zr * (Vy_o[1] - Vy_o[2]) - Vy_r * (Zo[1] - Zo[2]) = (Yo[1] * Vz_o[1] - Yo[2] * Vz_o[2]) - (Zo[1] * Vy_o[1] - Zo[2] * Vy_o[2])
+        Xr * (Vy_o[1] - Vy_o[2]) - (Xo[1] * Vy_o[1] - Xo[2] * Vy_o[2]) + Vy_r * (Xo[1] - Xo[2]) - Yr * (Vx_o[1] - Vx_o[2]) + (Yo[1] * Vx_o[1] - Yo[2] * Vx_o[2]) - Vx_r * (Yo[1] - Yo[2]) = 0
+                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^                                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        Xr * (Vy_o[1] - Vy_o[2]) + Vy_r * (Xo[1] - Xo[2]) - Yr * (Vx_o[1] - Vx_o[2]) - Vx_r * (Yo[1] - Yo[2]) = (Xo[1] * Vy_o[1] - Xo[2] * Vy_o[2]) - (Yo[1] * Vx_o[1] - Yo[2] * Vx_o[2])    (7)
+
+    For (5):
+
+        Hailstone 1: Yr * Vz_o[1] - Yr * Vz_r - Yo[1] * Vz_o[1] + Yo[1] * Vz_r    - Zr * Vy_o[1] + Zr * Vy_r + Zo[1] * Vy_o[1] - Zo[1] * Vy_r = 0
+        Hailstone 2: Yr * Vz_o[2] - Yr * Vz_r - Yo[2] * Vz_o[2] + Yo[2] * Vz_r    - Zr * Vy_o[2] + Zr * Vy_r + Zo[2] * Vy_o[2] - Zo[2] * Vy_r = 0
+
+        Yr * (Vz_o[1] - Vz_o[2]) - (Yo[1] * Vz_o[1] - Yo[2] * Vz_o[2]) + Vz_r * (Yo[1] - Yo[2]) - Zr * (Vy_o[1] - Vy_o[2]) + (Zo[1] * Vy_o[1] - Zo[2] * Vy_o[2]) - Vy_r * (Zo[1] - Zo[2]) = 0
+                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^                                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        Yr * (Vz_o[1] - Vz_o[2]) + Vz_r * (Yo[1] - Yo[2]) - Zr * (Vy_o[1] - Vy_o[2]) - Vy_r * (Zo[1] - Zo[2]) = (Yo[1] * Vz_o[1] - Yo[2] * Vz_o[2]) - (Zo[1] * Vy_o[1] - Zo[2] * Vy_o[2])    (8)
+
+    For (6):
+
+        Hailstone 1: Xr * Vz_o[1] - Xr * Vz_r - Xo[1] * Vz_o[1] + Xo[1] * Vz_r    - Zr * Vx_o[1] + Zr * Vx_r + Zo[1] * Vx_o[1] - Zo[1] * Vx_r = 0
+        Hailstone 2: Xr * Vz_o[2] - Xr * Vz_r - Xo[2] * Vz_o[2] + Xo[2] * Vz_r    - Zr * Vx_o[2] + Zr * Vx_r + Zo[2] * Vx_o[2] - Zo[2] * Vx_r = 0
+
+        Xr * (Vz_o[1] - Vz_o[2]) - (Xo[1] * Vz_o[1] - Xo[2] * Vz_o[2]) + Vz_r * (Xo[1] - Xo[2]) - Zr * (Vx_o[1] - Vx_o[2]) + (Zo[1] * Vx_o[1] - Zo[2] * Vx_o[2]) - Vx_r * (Zo[1] - Zo[2]) = 0
+                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^                                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        Xr * (Vz_o[1] - Vz_o[2]) + Vz_r * (Xo[1] - Xo[2]) - Zr * (Vx_o[1] - Vx_o[2]) - Vx_r * (Zo[1] - Zo[2]) = (Xo[1] * Vz_o[1] - Xo[2] * Vz_o[2]) - (Zo[1] * Vx_o[1] - Zo[2] * Vx_o[2])    (9)
+
+The substruction result:
+
+        Xr * (Vy_o[1] - Vy_o[2]) + Vy_r * (Xo[1] - Xo[2]) - Yr * (Vx_o[1] - Vx_o[2]) - Vx_r * (Yo[1] - Yo[2]) = (Xo[1] * Vy_o[1] - Xo[2] * Vy_o[2]) - (Yo[1] * Vx_o[1] - Yo[2] * Vx_o[2])    (7)
+        Yr * (Vz_o[1] - Vz_o[2]) + Vz_r * (Yo[1] - Yo[2]) - Zr * (Vy_o[1] - Vy_o[2]) - Vy_r * (Zo[1] - Zo[2]) = (Yo[1] * Vz_o[1] - Yo[2] * Vz_o[2]) - (Zo[1] * Vy_o[1] - Zo[2] * Vy_o[2])    (8)
+        Xr * (Vz_o[1] - Vz_o[2]) + Vz_r * (Xo[1] - Xo[2]) - Zr * (Vx_o[1] - Vx_o[2]) - Vx_r * (Zo[1] - Zo[2]) = (Xo[1] * Vz_o[1] - Xo[2] * Vz_o[2]) - (Zo[1] * Vx_o[1] - Zo[2] * Vx_o[2])    (9)
+
+We have only 6 unknown variables: [Xr, Yr, Zr, Vx_r, Vx_y, Vx_z], it means we need at least 6 equations => 3 hailstones.
+
+        1) Xr * (Vy_o[1] - Vy_o[2]) + Vy_r * (Xo[1] - Xo[2]) - Yr * (Vx_o[1] - Vx_o[2]) - Vx_r * (Yo[1] - Yo[2]) = (Xo[1] * Vy_o[1] - Xo[2] * Vy_o[2]) - (Yo[1] * Vx_o[1] - Yo[2] * Vx_o[2])
+        
+        2) Yr * (Vz_o[1] - Vz_o[2]) + Vz_r * (Yo[1] - Yo[2]) - Zr * (Vy_o[1] - Vy_o[2]) - Vy_r * (Zo[1] - Zo[2]) = (Yo[1] * Vz_o[1] - Yo[2] * Vz_o[2]) - (Zo[1] * Vy_o[1] - Zo[2] * Vy_o[2])
+        
+        3) Xr * (Vz_o[1] - Vz_o[2]) + Vz_r * (Xo[1] - Xo[2]) - Zr * (Vx_o[1] - Vx_o[2]) - Vx_r * (Zo[1] - Zo[2]) = (Xo[1] * Vz_o[1] - Xo[2] * Vz_o[2]) - (Zo[1] * Vx_o[1] - Zo[2] * Vx_o[2])
+
+        4) Xr * (Vy_o[1] - Vy_o[3]) + Vy_r * (Xo[1] - Xo[3]) - Yr * (Vx_o[1] - Vx_o[3]) - Vx_r * (Yo[1] - Yo[3]) = (Xo[1] * Vy_o[1] - Xo[3] * Vy_o[3]) - (Yo[1] * Vx_o[1] - Yo[3] * Vx_o[3])
+        
+        5) Yr * (Vz_o[1] - Vz_o[3]) + Vz_r * (Yo[1] - Yo[3]) - Zr * (Vy_o[1] - Vy_o[3]) - Vy_r * (Zo[1] - Zo[3]) = (Yo[1] * Vz_o[1] - Yo[3] * Vz_o[3]) - (Zo[1] * Vy_o[1] - Zo[3] * Vy_o[3])
+        
+        6) Xr * (Vz_o[1] - Vz_o[3]) + Vz_r * (Xo[1] - Xo[3]) - Zr * (Vx_o[1] - Vx_o[3]) - Vx_r * (Zo[1] - Zo[3]) = (Xo[1] * Vz_o[1] - Xo[3] * Vz_o[3]) - (Zo[1] * Vx_o[1] - Zo[3] * Vx_o[3])
+
+Form Ax = B:
+
+    X = [Xr, Yr, Zr, Vx_r, Vy_r, Vz_r]
 
 
+          (Vy_o[1] - Vy_o[2]),      -(Vx_o[1] - Vx_o[2]),                0,               -(Yo[1] - Yo[2]),       (Xo[1] - Xo[2]),             0
+                   0,                (Vz_o[1] - Vz_o[2]),      -(Vy_o[1] - Vy_o[2]),              0,             -(Zo[1] - Zo[2]),      (Yo[1] - Yo[2])
+    A =   (Vz_o[1] - Vz_o[2]),                0,               -(Vx_o[1] - Vx_o[2]),      -(Zo[1] - Zo[2]),              0,             (Xo[1] - Xo[2])
+          (Vy_o[1] - Vy_o[3]),      -(Vx_o[1] - Vx_o[3]),                0,               -(Yo[1] - Yo[3]),       (Xo[1] - Xo[3]),             0
+                   0,                (Vz_o[1] - Vz_o[3]),      -(Vy_o[1] - Vy_o[3]),              0,             -(Zo[1] - Zo[3]),      (Yo[1] - Yo[3])
+          (Vz_o[1] - Vz_o[3]),                0,               -(Vx_o[1] - Vx_o[3]),      -(Zo[1] - Zo[3]),              0,             (Xo[1] - Xo[3])
 
---------- To be continued ----------
 
-    Xr * (Vy_o[1] - Vy_o[2]) + Vy_r * (Xo[1] - Xo[2]) - Yr * (Vx_o[1] - Vx_o[2]) - Vy_r * (Yo[1] - Yo[2]) = (Xo[1] * Vy_o[1] - Xo[2] * Vy_o[2]) - (Yo[1] * Vx_o[1] - Yo[2] * Vx_o[2])
+          (Xo[1] * Vy_o[1] - Xo[2] * Vy_o[2]) - (Yo[1] * Vx_o[1] - Yo[2] * Vx_o[2])
+          (Yo[1] * Vz_o[1] - Yo[2] * Vz_o[2]) - (Zo[1] * Vy_o[1] - Zo[2] * Vy_o[2])
+    B =   (Xo[1] * Vz_o[1] - Xo[2] * Vz_o[2]) - (Zo[1] * Vx_o[1] - Zo[2] * Vx_o[2])
+          (Xo[1] * Vy_o[1] - Xo[3] * Vy_o[3]) - (Yo[1] * Vx_o[1] - Yo[3] * Vx_o[3])
+          (Yo[1] * Vz_o[1] - Yo[3] * Vz_o[3]) - (Zo[1] * Vy_o[1] - Zo[3] * Vy_o[3])
+          (Xo[1] * Vz_o[1] - Xo[3] * Vz_o[3]) - (Zo[1] * Vx_o[1] - Zo[3] * Vx_o[3])
 
-    A = [(Vy_o[1] - Vy_o[2]), (Xo[1] - Xo[2]), -(Vx_o[1] - Vx_o[2]), -(Yo[1] - Yo[2])]
-    X = [Xr, Vy_r, Yr, Vy_r]
-    B = (Xo[1] * Vy_o[1] - Xo[2] * Vy_o[2]) - (Yo[1] * Vx_o[1] - Yo[2] * Vx_o[2])
-
-The same can 
+New we need to solve the problem using this Ax = B using LU or Gaussian elimination.
+Solved using Gaussian elimination - see my comments below.
 
 */
+
+
+using matrix = std::vector<std::vector<long double>>;
+using vector = std::vector<long double>;
+
+
+namespace math {
+    /* 
+    
+    Gaussian elimination - an algorithm for solving systems of linear equations
+    Link: https://en.wikipedia.org/wiki/Gaussian_elimination 
+    
+    Initially tried plain LU decomposition, but it produced a singular matrix for this problem. 
+    Tested LU on simple linear systems, and it worked correctly, but when applied to AoC 2023 
+    Day 24 input, the matrix was near-singular. Switching to Gaussian elimination resolved the issue
+    and it is way more simpler from the implementation point of view.
+    Link: https://en.wikipedia.org/wiki/LU_decomposition
+
+    */
+    std::optional<vector> gaussian_elimination(matrix A, vector b) {
+        int n = A.size();
+
+        for (int k = 0; k < n; ++k) {
+            int pivot = k;
+            long double max_value = std::abs(A[k][k]);
+            for (int i = k + 1; i < n; ++i) {
+                if (std::abs(A[i][k]) > max_value) {
+                    max_value = std::abs(A[i][k]);
+                    pivot = i;
+                }
+            }
+
+            if (max_value < EPS) {
+                return { }; /* matrix is singular */
+            }
+
+            std::swap(A[k], A[pivot]);
+            std::swap(b[k], b[pivot]);
+
+            /* reduction */
+            for (int i = k + 1; i < n; ++i) {
+                long double factor = A[i][k] / A[k][k];
+
+                for (int j = k; j < n; ++j) {
+                    A[i][j] -= factor * A[k][j];
+                }
+
+                b[i] -= factor * b[k];
+            }
+        }
+
+        /* back substitution */
+        vector x(n);
+        for (int i = n - 1; i >= 0; --i) {
+            long double sum = b[i];
+
+            for (int j = i + 1; j < n; ++j) {
+                sum -= A[i][j] * x[j];
+            }
+
+            x[i] = sum / A[i][i];
+        }
+
+        return x;
+    }
+}
+
+
 class trajectory_solver {
 public:
     std::vector<hailstone_t> m_hails;
@@ -223,7 +327,68 @@ public:
     { }
 
 public:
+    std::uint64_t eval_rock_position() {
+        for (int i = 0; i < m_hails.size(); i++) {
+            for (int j = i + 1; j < m_hails.size(); j++) {
+                for (int k = j + 1; k < m_hails.size(); k++) {
+                    matrix A = create_a(i, j, k);
+                    vector b = create_b(i, j, k);
 
+                    std::optional<std::vector<long double>> x = math::gaussian_elimination(A, b);
+                    if (x) {
+                        hailstone_t r;
+                        r.p.x = x.value()[0];
+                        r.p.y = x.value()[1];
+                        r.p.z = x.value()[2];
+
+                        return (std::uint64_t) std::round(r.p.x + r.p.y + r.p.z);
+                    }
+                }
+            }
+        }
+
+        return -1;
+    }
+
+private:
+    matrix create_a(int i, int j, int k) {
+        const auto [Xo1, Yo1, Zo1] = m_hails[i].p;
+        const auto [Xo2, Yo2, Zo2] = m_hails[j].p;
+        const auto [Xo3, Yo3, Zo3] = m_hails[k].p;
+
+        const auto [Vx_o1, Vy_o1, Vz_o1] = m_hails[i].v;
+        const auto [Vx_o2, Vy_o2, Vz_o2] = m_hails[j].v;
+        const auto [Vx_o3, Vy_o3, Vz_o3] = m_hails[k].v;
+
+        return {
+            { (Vy_o1 - Vy_o2),  -(Vx_o1 - Vx_o2),          0,         -(Yo1 - Yo2),   (Xo1 - Xo2),        0      },
+            {        0,          (Vz_o1 - Vz_o2),  -(Vy_o1 - Vy_o2),        0,       -(Zo1 - Zo2),   (Yo1 - Yo2) },
+            { (Vz_o1 - Vz_o2),          0,         -(Vx_o1 - Vx_o2),  -(Zo1 - Zo2),        0,        (Xo1 - Xo2) },
+            { (Vy_o1 - Vy_o3),  -(Vx_o1 - Vx_o3),          0,         -(Yo1 - Yo3),    (Xo1 - Xo3),        0     },
+            {        0,          (Vz_o1 - Vz_o3),  -(Vy_o1 - Vy_o3),        0,        -(Zo1 - Zo3),  (Yo1 - Yo3) },
+            { (Vz_o1 - Vz_o3),          0,         -(Vx_o1 - Vx_o3),  -(Zo1 - Zo3),        0,        (Xo1 - Xo3) }
+        };
+
+    }
+
+    vector create_b(int i, int j, int k) {
+        const auto [Xo1, Yo1, Zo1] = m_hails[i].p;
+        const auto [Xo2, Yo2, Zo2] = m_hails[j].p;
+        const auto [Xo3, Yo3, Zo3] = m_hails[k].p;
+
+        const auto [Vx_o1, Vy_o1, Vz_o1] = m_hails[i].v;
+        const auto [Vx_o2, Vy_o2, Vz_o2] = m_hails[j].v;
+        const auto [Vx_o3, Vy_o3, Vz_o3] = m_hails[k].v;
+
+        return {
+            (Xo1 * Vy_o1 - Xo2 * Vy_o2) - (Yo1 * Vx_o1 - Yo2 * Vx_o2),
+            (Yo1 * Vz_o1 - Yo2 * Vz_o2) - (Zo1 * Vy_o1 - Zo2 * Vy_o2),
+            (Xo1 * Vz_o1 - Xo2 * Vz_o2) - (Zo1 * Vx_o1 - Zo2 * Vx_o2),
+            (Xo1 * Vy_o1 - Xo3 * Vy_o3) - (Yo1 * Vx_o1 - Yo3 * Vx_o3),
+            (Yo1 * Vz_o1 - Yo3 * Vz_o3) - (Zo1 * Vy_o1 - Zo3 * Vy_o3),
+            (Xo1 * Vz_o1 - Xo3 * Vz_o3) - (Zo1 * Vx_o1 - Zo3 * Vx_o3)
+        };
+    }
 };
 
 
@@ -243,6 +408,9 @@ int main() {
 #endif
     int counter = intersection_checker(input, x1, x2, y1, y2).count();
     std::cout << "Intersections within the test area: " << counter << std::endl;
+
+    std::uint64_t position = trajectory_solver(input).eval_rock_position();
+    std::cout << "Sum of the X, Y, and Z coordinates of the rock initial position: " << position << std::endl;
 
     return 0;
 }
