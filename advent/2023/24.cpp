@@ -80,7 +80,7 @@ std::vector<hailstone_t> read_input() {
 }
 
 
-class solution {
+class intersection_checker {
 private:
     std::vector<hailstone_t> m_hails;
     long double m_x_begin;
@@ -89,7 +89,7 @@ private:
     long double m_y_end;
 
 public:
-    solution(const std::vector<hailstone_t>& p_hails, long double x_begin, long double x_end, long double y_begin, long double y_end) :
+    intersection_checker(const std::vector<hailstone_t>& p_hails, long double x_begin, long double x_end, long double y_begin, long double y_end) :
         m_hails(p_hails),
         m_x_begin(x_begin),
         m_x_end(x_end),
@@ -98,7 +98,7 @@ public:
     { }
 
 public:
-    int count_intersections() const {
+    int count() const {
         int counter = 0;
         for (int i = 0; i < m_hails.size(); i++) {
             for (int j = i + 1; j < m_hails.size(); j++) {
@@ -124,6 +124,109 @@ public:
 };
 
 
+/*
+
+Hailstone position in time:
+
+    position[t] = position[0] + t * velocity
+
+For every hailstone:
+
+    P[t][i] = P[0][i] + t * V[i]
+
+The same for rock position:
+
+    Pr[t] = Pr[0] + t * Vr
+
+Rock and object collision:
+
+    Po[t] = Pr[t]
+    Po + t * Vo = Pr + t * Vr,   t - is the same for both parts of equation
+
+    Po + t * Vo - Pr - t * Vr = 0
+    (Po - Pr) + t(Vo - Vr) = 0
+    t(Vo - Vr) = -(Po - Pr)
+    t(Vo - Vr) = (Pr - Po)
+    t = (Pr - Po) / (Vo - Vr)
+
+We have three coordinates:
+
+    t = (Xr - Xo) / (Vx_o - Vy_r) = (Yr - Yo) / (Vy_o - Vy_r) = (Zr - Zo) / (Vz_o - Vz_r)
+
+From this, we can eliminate t and get two equations:
+
+    (Xr - Xo) / (Vx_o - Vy_r) = (Yr - Yo) / (Vy_o - Vy_r)
+    (Yr - Yo) / (Vy_o - Vy_r) = (Zr - Zo) / (Vz_o - Vz_r)
+
+Which can be rewritten:
+
+    (Xr - Xo) * (Vy_o - Vy_r) - (Yr - Yo) * (Vx_o - Vy_r) = 0                  (1)
+    (Yr - Yo) * (Vz_o - Vz_r) - (Zr - Zo) * (Vy_o - Vy_r) = 0                  (2)
+
+Open brackets for (1):
+
+    Xr * Vy_o - Xr * Vy_r - Xo * Vy_o + Xo * Vy_r    - Yr * Vx_o + Yr * Vy_r + Yo * Vx_o - Yo * Vy_r = 0     (3)
+                ^^^^^^^^^                                          ^^^^^^^^^
+
+We have two non-linear components for (3), which can be eliminated by substructing two hailstones:
+
+    Hailstone 1: Xr * Vy_o[1] - Xr * Vy_r - Xo[1] * Vy_o[1] + Xo[1] * Vy_r    - Yr * Vx_o[1] + Yr * Vy_r + Yo[1] * Vx_o[1] - Yo[1] * Vy_r = 0
+    Hailstone 2: Xr * Vy_o[2] - Xr * Vy_r - Xo[2] * Vy_o[2] + Xo[2] * Vy_r    - Yr * Vx_o[2] + Yr * Vy_r + Yo[2] * Vx_o[2] - Yo[2] * Vy_r = 0
+
+Their delta: 
+
+    Xr * (Vy_o[1] - Vy_o[2]) - (Xo[1] * Vy_o[1] - Xo[2] * Vy_o[2]) + Vy_r * (Xo[1] - Xo[2]) - Yr * (Vx_o[1] - Vx_o[2]) + (Yo[1] * Vx_o[1] - Yo[2] * Vx_o[2]) - Vy_r * (Yo[1] - Yo[2]) = 0
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^                                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    Xr * (Vy_o[1] - Vy_o[2]) + Vy_r * (Xo[1] - Xo[2]) - Yr * (Vx_o[1] - Vx_o[2]) - Vy_r * (Yo[1] - Yo[2]) = (Xo[1] * Vy_o[1] - Xo[2] * Vy_o[2]) - (Yo[1] * Vx_o[1] - Yo[2] * Vx_o[2])    (4)
+
+Repeat the same for (2):
+
+    (Yr - Yo) * (Vz_o - Vz_r) - (Zr - Zo) * (Vy_o - Vy_r) = 0
+
+    Yr * Vz_o - Yr * Vz_r - Yo * Vz_o + Yo * Vz_r    - Zr * Vy_o + Zr * Vy_r + Zo * Vy_o - Zo * Vy_r = 0
+                ^^^^^^^^^                                          ^^^^^^^^^
+
+    Hailstone 1: Yr * Vz_o[1] - Yr * Vz_r - Yo[1] * Vz_o[1] + Yo[1] * Vz_r    - Zr * Vy_o[1] + Zr * Vy_r + Zo[1] * Vy_o[1] - Zo[1] * Vy_r = 0
+    Hailstone 2: Yr * Vz_o[2] - Yr * Vz_r - Yo[2] * Vz_o[2] + Yo[2] * Vz_r    - Zr * Vy_o[2] + Zr * Vy_r + Zo[2] * Vy_o[2] - Zo[2] * Vy_r = 0
+
+    Yr * (Vz_o[1] - Vz_o[2]) - (Yo[1] * Vz_o[1] - Yo[2] * Vz_o[2]) + Vz_r * (Yo[1] - Yo[2]) - Zr * (Vy_o[1] - Vy_o[2]) + (Zo[1] * Vy_o[1] - Zo[2] * Vy_o[2]) - Vy_r * (Zo[1] - Zo[2]) = 0
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^                                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    Yr * (Vz_o[1] - Vz_o[2]) + Vz_r * (Yo[1] - Yo[2]) - Zr * (Vy_o[1] - Vy_o[2]) - Vy_r * (Zo[1] - Zo[2]) = (Yo[1] * Vz_o[1] - Yo[2] * Vz_o[2]) - (Zo[1] * Vy_o[1] - Zo[2] * Vy_o[2])    (5)
+
+Now we have linear forms in (4) and (5) for every pair of hailstones:
+
+    Xr * (Vy_o[1] - Vy_o[2]) + Vy_r * (Xo[1] - Xo[2]) - Yr * (Vx_o[1] - Vx_o[2]) - Vy_r * (Yo[1] - Yo[2]) = (Xo[1] * Vy_o[1] - Xo[2] * Vy_o[2]) - (Yo[1] * Vx_o[1] - Yo[2] * Vx_o[2])
+    Yr * (Vz_o[1] - Vz_o[2]) + Vz_r * (Yo[1] - Yo[2]) - Zr * (Vy_o[1] - Vy_o[2]) - Vy_r * (Zo[1] - Zo[2]) = (Yo[1] * Vz_o[1] - Yo[2] * Vz_o[2]) - (Zo[1] * Vy_o[1] - Zo[2] * Vy_o[2])
+
+
+
+--------- To be continued ----------
+
+    Xr * (Vy_o[1] - Vy_o[2]) + Vy_r * (Xo[1] - Xo[2]) - Yr * (Vx_o[1] - Vx_o[2]) - Vy_r * (Yo[1] - Yo[2]) = (Xo[1] * Vy_o[1] - Xo[2] * Vy_o[2]) - (Yo[1] * Vx_o[1] - Yo[2] * Vx_o[2])
+
+    A = [(Vy_o[1] - Vy_o[2]), (Xo[1] - Xo[2]), -(Vx_o[1] - Vx_o[2]), -(Yo[1] - Yo[2])]
+    X = [Xr, Vy_r, Yr, Vy_r]
+    B = (Xo[1] * Vy_o[1] - Xo[2] * Vy_o[2]) - (Yo[1] * Vx_o[1] - Yo[2] * Vx_o[2])
+
+The same can 
+
+*/
+class trajectory_solver {
+public:
+    std::vector<hailstone_t> m_hails;
+
+public:
+    trajectory_solver(const std::vector<hailstone_t>& p_hails) :
+        m_hails(p_hails)
+    { }
+
+public:
+
+};
+
+
 int main() {
     auto input = read_input();
 
@@ -138,7 +241,7 @@ int main() {
     long double y1 = 200000000000000;
     long double y2 = 400000000000000;
 #endif
-    int counter = solution(input, x1, x2, y1, y2).count_intersections();
+    int counter = intersection_checker(input, x1, x2, y1, y2).count();
     std::cout << "Intersections within the test area: " << counter << std::endl;
 
     return 0;
