@@ -261,10 +261,10 @@ namespace math {
     Gaussian elimination - an algorithm for solving systems of linear equations
     Link: https://en.wikipedia.org/wiki/Gaussian_elimination 
     
-    Initially tried plain LU decomposition, but it produced a singular matrix for this problem. 
-    Tested LU on simple linear systems, and it worked correctly, but when applied to AoC 2023 
-    Day 24 input, the matrix was near-singular. Switching to Gaussian elimination resolved the issue
-    and it is way more simpler from the implementation point of view.
+    Initially tried plain LU decomposition without pivoting, but it produced a singular matrix 
+	for this problem. Tested LU on simple linear systems, and it worked correctly, but when 
+	applied to AoC 2023 Day 24 input, the matrix was near-singular. Switching to Gaussian 
+	elimination resolved the issue and it is way more simpler from the implementation point of view.
     Link: https://en.wikipedia.org/wiki/LU_decomposition
 
     */
