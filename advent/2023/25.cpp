@@ -21,10 +21,12 @@ struct weighted_edge_t {
 class solution {
 private:
     graph m_g;
+    std::vector<int> m_sz;
 
 public:
     solution(const graph& p_g) :
-        m_g(p_g)
+        m_g(p_g),
+        m_sz(p_g.size(), 1)
     { }
 
 public:
@@ -36,22 +38,23 @@ public:
             }
         }
 
-        return minimum_cut(g);
+        return minimum_cut(g, 3);
     }
 
 private:
-    int minimum_cut(std::unordered_map<int, std::unordered_map<int, int>>& g) {
-        int best_min_cut = std::numeric_limits<int>::max();
-
+    int minimum_cut(std::unordered_map<int, std::unordered_map<int, int>>& g, const int edges_to_cut) {
         while (g.size() > 1) {
-            const int cut_value = minimum_cut_phase(g);
-            best_min_cut = std::min(best_min_cut, cut_value);
+            const int subgraph_size = minimum_cut_phase(g, edges_to_cut);
+            if (subgraph_size != -1) {
+                const int other_size = m_g.size() - subgraph_size;
+                return subgraph_size * other_size;
+            }
         }
 
-        return best_min_cut;
+        throw std::exception((std::string("impossible to cut graph by using '") + std::to_string(edges_to_cut) + std::string("' edges.")).c_str());
     }
 
-    int minimum_cut_phase(std::unordered_map<int, std::unordered_map<int, int>>& g) {
+    int minimum_cut_phase(std::unordered_map<int, std::unordered_map<int, int>>& g, int edges_to_cut) {
         std::unordered_set<int> set;
         std::vector<int> weights(m_g.size(), 0);
 
@@ -113,6 +116,10 @@ private:
             cut_of_the_phase_value += w;
         }
 
+        if (cut_of_the_phase_value == edges_to_cut) {
+            return m_sz[t];
+        }
+
         /* merge s and t */
         for (const auto& [nei, w] : g[t]) {
             if (nei == s) {
@@ -126,10 +133,13 @@ private:
             g[nei].erase(t);
         }
 
+        m_sz[s] += m_sz[t];
+        m_sz[t] = 0;
+
         g[s].erase(t);
         g.erase(t);
 
-        return cut_of_the_phase_value;
+        return -1;
     }
 };
 
