@@ -64,10 +64,6 @@ private:
         int s = -1;
         int t = cur;
 
-        if (g.size() == 2) {
-            std::cout << std::endl;
-        }
-
         while (g.size() != set.size()) {
             for (const auto& [id, w] : g[cur]) {
                 if (set.count(id) == 0) {
