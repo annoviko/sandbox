@@ -1,4 +1,4 @@
-# 🎄 Advent of Code 2020 🎄
+# 🎄 Advent of Code 2023 🎄
 
 This repository section contains my C++ solutions for [Advent of Code 2023](https://adventofcode.com/2023), an annual set of programming puzzles created by Eric Wastl.  
 
@@ -12,7 +12,7 @@ All solutions are written in C++ without using any third-party libraries. They a
 
 All stars gathered, the journey is complete 🎄!
 
-![Advent of Code 2020 Completed](image-complete.png)
+![Advent of Code 2023 Completed](image-complete.png)
 
 ---
 
