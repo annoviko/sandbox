@@ -1,8 +1,9 @@
 #include <chrono>
+#include <conio.h>
 #include <fstream>
 #include <iostream>
 #include <vector>
-#include <sstream>
+#include <sstream>s
 #include <string>
 #include <thread>
 #include <variant>
@@ -23,14 +24,14 @@ class solution {
 private:
     std::vector<command_t> m_commands;
 
-    const std::string CYCLE_COUNTER =   "CYCLE COUNTER:   ";
+    const std::string CYCLE_COUNTER = "CYCLE COUNTER:   ";
     const std::string COMMAND_COUNTER = "COMMAND COUNTER: ";
-    const std::string COMMAND =         "COMMAND:         ";
-    const std::string REGX =            "REGISTER X:      ";
-    const int PANEL_ROW = 2;
+    const std::string COMMAND = "COMMAND:         ";
+    const std::string REGX = "REGISTER X:      ";
+    const int PANEL_ROW = 3;
     const int PANEL_COL = 3;
 
-    const int ROW_OFFSET = 7;
+    const int ROW_OFFSET = 10;
     const int COL_OFFSET = 3;
 
 public:
@@ -83,25 +84,34 @@ private:
     }
 
     void update_panel(int cycle, int command_counter, int regx, std::string& command) {
-        move_cursor(PANEL_ROW, CYCLE_COUNTER.size() + 1);
-        std::cout << cycle;
+        int offset = 4;
 
-        move_cursor(PANEL_ROW + 1, COMMAND_COUNTER.size() + 1);
-        std::cout << command_counter;
+        move_cursor(PANEL_ROW, CYCLE_COUNTER.size() + 1 + offset);
+        std::cout << "\033[32m" << cycle << "\033[0m";
 
-        move_cursor(PANEL_ROW + 2, COMMAND.size() + 1);
-        std::cout << command;
+        move_cursor(PANEL_ROW + 1, COMMAND_COUNTER.size() + 1 + offset);
+        std::cout << "\033[32m" << command_counter << "\033[0m";
 
-        move_cursor(PANEL_ROW + 3, REGX.size() + 1);
-        std::cout << std::to_string(regx) + std::string("    ");
+        move_cursor(PANEL_ROW + 2, COMMAND.size() + 1 + offset);
+        std::cout << "\033[32m" << command << "\033[0m";
+
+        move_cursor(PANEL_ROW + 3, REGX.size() + 1 + offset);
+        std::cout << "\033[32m" << std::to_string(regx) + std::string("    ") << "\033[0m";
     }
 
     void draw_panel_frame() {
-        draw_frame(1, PANEL_COL, 4);
+        move_cursor(PANEL_ROW - 2, COL_OFFSET + 15);
+        std::cout << "\033[36mSystem State\033[0m";
+        draw_frame(PANEL_ROW - 1, PANEL_COL, 4);
     }
 
     void draw_crt_frame() {
+        move_cursor(ROW_OFFSET - 1, COL_OFFSET + 10);
+        std::cout << "\033[36mCathode-Ray Tube Screen\033[0m";
         draw_frame(ROW_OFFSET, COL_OFFSET, 6);
+
+        move_cursor(ROW_OFFSET + 10, COL_OFFSET);
+        std::cout << "  \033[44mAdvent of Code 2022 - Day 10 - Part 2\033[0m";
     }
 
     void draw_frame(int row_offset, int col_offset, int height) {
@@ -121,6 +131,8 @@ private:
 
 public:
     void visualization() {
+        _getch();
+
         draw_crt_frame();
         hide_cursor();
         show_panel();
@@ -150,7 +162,7 @@ public:
                         ticks = 1;
                         command_name = "NOOP";
                     }
-                }, m_commands[counter]);
+                    }, m_commands[counter]);
 
                 counter++;
             }
@@ -172,7 +184,7 @@ public:
 
             update_panel(cycle, counter, regx, command_name);
             std::cout.flush();
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            std::this_thread::sleep_for(std::chrono::milliseconds(25));
 
             ticks--;
         }
