@@ -1,17 +1,17 @@
 #include <chrono>
+#ifdef _WIN32
 #include <conio.h>
+#endif
 #include <fstream>
 #include <iostream>
 #include <vector>
-#include <sstream>s
+#include <sstream>
 #include <string>
 #include <thread>
 #include <variant>
 
-#include <windows.h>
 
-
-struct noop { };
+struct noop {};
 struct addx {
     int value;
 };
@@ -37,7 +37,8 @@ private:
 public:
     solution(const std::vector<command_t>& p_commands) :
         m_commands(p_commands)
-    { }
+    {
+    }
 
 private:
     void move_cursor(int row, int col) {
@@ -131,7 +132,9 @@ private:
 
 public:
     void visualization() {
+#ifdef _WIN32
         _getch();
+#endif
 
         draw_crt_frame();
         hide_cursor();
@@ -148,21 +151,23 @@ public:
 
         for (int cycle = 0; cycle < 40 * 6; cycle++) {
             if (ticks == 0) {
-                regx = regx_next;
+                if (counter < m_commands.size()) {
+                    regx = regx_next;
 
-                std::visit([&regx, &regx_next, &ticks, &command_name](auto&& c) {
-                    using T = std::decay_t<decltype(c)>;
+                    std::visit([&regx, &regx_next, &ticks, &command_name](auto&& c) {
+                        using T = std::decay_t<decltype(c)>;
 
-                    if constexpr (std::is_same_v<T, addx>) {
-                        regx_next += c.value;
-                        ticks = 2;
-                        command_name = "ADDX";
-                    }
-                    else if constexpr (std::is_same_v<T, noop>) {
-                        ticks = 1;
-                        command_name = "NOOP";
-                    }
+                        if constexpr (std::is_same_v<T, addx>) {
+                            regx_next += c.value;
+                            ticks = 2;
+                            command_name = "ADDX";
+                        }
+                        else if constexpr (std::is_same_v<T, noop>) {
+                            ticks = 1;
+                            command_name = "NOOP";
+                        }
                     }, m_commands[counter]);
+                }
 
                 counter++;
             }
@@ -222,6 +227,9 @@ int main() {
     auto input = read_input();
 
     solution(input).visualization();
+#ifdef _WIN32
+    _getch();
+#endif
 
     return 0;
 }
