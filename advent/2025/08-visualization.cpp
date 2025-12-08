@@ -128,7 +128,7 @@ private:
     std::vector<position_t> pos;
 
 public:
-    solution(const std::vector<position_t>& p_pos) : pos(p_pos) { }
+    solution(const std::vector<position_t>& p_pos) : pos(p_pos) {}
 
 public:
     void visualize_algorithm() {
@@ -157,9 +157,14 @@ public:
 
         std::vector<std::vector<int>> neis(pos.size());
 
-        double lastUpdate = GetTime();
+        double last_update = GetTime();
+        bool is_play_animation = false;
 
         while (!WindowShouldClose()) {
+            if (IsKeyPressed(KEY_ENTER)) {
+                is_play_animation = true;
+            }
+
             UpdateCamera(&camera, CAMERA_ORBITAL);
 
             BeginDrawing();
@@ -168,7 +173,7 @@ public:
             BeginMode3D(camera);
 
             double now = GetTime();
-            if (now - lastUpdate > 0.0001) {
+            if ((now - last_update > 0.0001) && is_play_animation) {
                 if (iteration < edges.size() && !done) {
                     const int from = edges[iteration].from;
                     const int to = edges[iteration].to;
@@ -183,7 +188,7 @@ public:
                     iteration++;
                 }
 
-                lastUpdate = now;
+                last_update = now;
             }
 
             for (int i = 0; i < pos.size(); i++) {
@@ -225,7 +230,7 @@ private:
 
         std::sort(result.begin(), result.end(), [](const edge_t& l, const edge_t& r) {
             return l.dist < r.dist;
-        });
+            });
 
         return result;
     }
