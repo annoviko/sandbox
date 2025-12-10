@@ -22,7 +22,7 @@ private:
     std::vector<machine_t> m_factory;
 
     std::unordered_map<std::string, int> cache;
-    std::unordered_map<std::string, std::unordered_set<int>> visited;
+    std::unordered_set<std::string> visited;
     int m_cur = 0;
 
 public:
@@ -60,14 +60,12 @@ private:
         {
             auto iter = visited.find(state);
             if (iter != visited.cend()) {
-                if (iter->second.count(button_index) > 0) {
-                    return NOT_FOUND;  /* we were in this state via that button - consider it as no way */
-                }
+                return NOT_FOUND;  /* we were in this state - consider it as no way */
             }
         }
 
         if (button_index != -1) {
-            visited[state].insert(button_index);
+            visited.insert(state);
         }
 
         int best_result = NOT_FOUND;
@@ -95,7 +93,6 @@ private:
             }
         }
 
-        //visited[state].erase(state);
         return best_result;
     }
 
