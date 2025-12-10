@@ -12,12 +12,12 @@ const int NOT_FOUND = std::numeric_limits<int>::max();
 
 struct machine_t {
     std::string pattern;
-    std::vector<std::string> buttons;
+    std::vector<std::vector<int>> buttons;
     std::vector<int> joltage;
 };
 
 
-class solution {
+class lights_configurator {
 private:
     std::vector<machine_t> m_factory;
 
@@ -26,17 +26,17 @@ private:
     int m_cur = 0;
 
 public:
-    solution(const std::vector<machine_t>& f) : m_factory(f) { }
+    lights_configurator(const std::vector<machine_t>& f) : m_factory(f) { }
 
 public:
-    int min_buttons_to_configure() {
+    int configure() {
         int counter = 0;
         for (m_cur = 0; m_cur < m_factory.size(); m_cur++) {
             visited.clear();
             cache.clear();
 
             const std::string state = std::string(m_factory[m_cur].pattern.size(), '.');
-            const int result_for_machine = min_buttons(state, -1);
+            const int result_for_machine = min_buttons_lights(state) - 1;
 
             counter += result_for_machine;
         }
@@ -44,7 +44,7 @@ public:
     }
 
 private:
-    int min_buttons(std::string state, int button_index) {
+    int min_buttons_lights(const std::string& state) {
         if (state == m_factory[m_cur].pattern) {
             cache[state] = 1;   /* nothing can be faster */
             return 1;
@@ -64,33 +64,18 @@ private:
             }
         }
 
-        if (button_index != -1) {
-            visited.insert(state);
-        }
+        visited.insert(state);
 
         int best_result = NOT_FOUND;
         for (int i = 0; i < m_factory[m_cur].buttons.size(); i++) {
             const std::string next_state = press(state, i);
-            const int candidate = min_buttons(next_state, i);
-            if (candidate == NOT_FOUND) {
-                continue;   /* path with no success */
-            }
-
+            const int candidate = min_buttons_lights(next_state);
             best_result = std::min(best_result, candidate);
         }
 
         if (best_result != NOT_FOUND) {
-            if (button_index != -1) {
-                best_result++;  /* count currently pressed button */
-            }
-
-            auto iter = cache.find(state);
-            if (iter != cache.cend()) {
-                iter->second = std::min(best_result, iter->second);
-            }
-            else {
-                cache[state] = best_result;
-            }
+            best_result++;  /* count currently pressed button */
+            cache[state] = best_result;
         }
 
         return best_result;
@@ -100,8 +85,7 @@ private:
         std::string new_state = state;
         const auto& buttons = m_factory[m_cur].buttons[btn_idx];
 
-        for (int i = 0; i < buttons.size(); i++) {
-            const int idx = buttons[i] - '0';
+        for (int idx : buttons) {
             new_state[idx] = (state[idx] == '#') ? '.' : '#';
         }
 
@@ -121,9 +105,9 @@ std::vector<machine_t> read_input() {
         machine.pattern = line.substr(1, p - 1);
 
         p = line.find('(', p);
-        std::string button;
+        std::vector<int> button;
         while (p != std::string::npos) {
-            button.push_back(line[p + 1]);
+            button.push_back(line[p + 1] - '0');
             p += 2;
 
             if (line[p] == ')') {
@@ -152,7 +136,8 @@ std::vector<machine_t> read_input() {
 int main() {
     auto input = read_input();
 
-    std::cout << "Minimum buttons to press: " << solution(input).min_buttons_to_configure() << std::endl;
+    std::cout << "Minimum pressed button to configure indicator: " << lights_configurator(input).configure() << std::endl;
+    //std::cout << "Minimum pressed button to configure joltage: " << joltage_configurator(input).configure() << std::endl;
 
     return 0;
 }
