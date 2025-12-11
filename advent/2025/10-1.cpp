@@ -137,7 +137,6 @@ int main() {
     auto input = read_input();
 
     std::cout << "Minimum pressed button to configure indicator: " << lights_configurator(input).configure() << std::endl;
-    //std::cout << "Minimum pressed button to configure joltage: " << joltage_configurator(input).configure() << std::endl;
 
     return 0;
 }
