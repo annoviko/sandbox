@@ -7,9 +7,6 @@
 #include <unordered_set>
 
 
-#include <conio.h>
-
-
 const int FREE = -1;
 
 
@@ -42,7 +39,6 @@ private:
     std::vector<std::vector<std::vector<placement_t>>> cell_to_placements;  /* [row][col] -> [figure index and placement] */
 
     std::vector<std::vector<int>> occupation;
-    std::vector<std::unordered_set<int>> visited_placements;
 
     std::vector<field_task_t> tasks;
     std::vector<std::vector<std::string>> figures;
@@ -62,8 +58,33 @@ public:
     std::uint64_t count_fit_regions() {
         std::uint64_t counter = 0;
         for (int i = 0; i < tasks.size(); i++) {
+            cell_to_placements.clear();
             create_possible_figures_on_field(tasks[i]);
             occupation = std::vector<std::vector<int>>(cell_to_placements.size(), std::vector<int>(cell_to_placements[0].size(), FREE));
+
+            /* check if we physically fit */
+            int min_required_area = 0;
+            for (int k = 0; k < tasks[i].figure_counters.size(); k++) {
+                if (tasks[i].figure_counters[k] == 0) {
+                    continue;   /* not needed */
+                }
+
+                int figure_area = 0;
+                for (const std::string& row : figures[k]) {
+                    for (char ch : row) {
+                        if (ch == '#') {
+                            figure_area++;
+                        }
+                    }
+                }
+
+                min_required_area += figure_area * tasks[i].figure_counters[k];
+            }
+
+            int available_area = cell_to_placements.size() * cell_to_placements[0].size();
+            if (available_area < min_required_area) {
+                continue;
+            }
 
             int index_figure = 0;
             for (; tasks[i].figure_counters[index_figure] == 0; index_figure++);
@@ -71,25 +92,12 @@ public:
             if (is_fit(tasks[i].figure_counters[index_figure], index_figure, i)) {
                 counter++;
             }
-
-            std::cout << i << " has been processed" << std::endl;
         }
 
         return counter;
     }
 
 private:
-    void print_occupation(int figure, int remaining) {
-        std::cout << std::endl;
-        std::cout << "Figure '" << figure << "' placed, remaining: '" << remaining << "'" << std::endl;
-        for (int i = 0; i < occupation.size(); i++) {
-            for (int j = 0; j < occupation[0].size(); j++) {
-                std::cout << (occupation[i][j] == FREE ? "." : std::to_string(occupation[i][j]));
-            }
-            std::cout << std::endl;
-        }
-    }
-
     bool is_fit(int remaining, int cur_index, int task_index) {
         if (cur_index >= figures.size()) {
             return true;    /* all figures placed */
@@ -130,9 +138,6 @@ private:
                     }
 
                     int new_remaining = remaining - 1;
-
-                    //print_occupation(cur_index, new_remaining);
-                    //(void) _getch();
 
                     /* try to place others */
                     bool success = false;
@@ -326,8 +331,7 @@ std::pair<std::vector<figure_t>, std::vector<field_task_t>> read_input() {
         }
 
         tasks.push_back({ width, height, counters });
-    }
-    while (std::getline(stream, line));
+    } while (std::getline(stream, line));
 
     return { figures, tasks };
 }
