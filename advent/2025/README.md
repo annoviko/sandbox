@@ -33,5 +33,6 @@ Some puzzles were suitable for visualizations, which help illustrate the problem
 These let you see the solutions in action and add a fun interactive element to the challenges.
 
 Day 08 visualization - junction boxes.
+
 ![Day 08 visualization](image-day-08.png)
 
