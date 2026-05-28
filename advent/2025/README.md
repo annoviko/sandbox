@@ -21,7 +21,7 @@ All stars gathered, the journey is complete 🎄!
 Here days which I liked:
 
 1. **Day 09** – computational geometry with data observation.  
-2. **Day 10** – integer linear programming with SMT.
+2. **Day 10** – integer linear programming.
 
 ---
 
