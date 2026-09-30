@@ -9,12 +9,13 @@
 
 
 struct node_t {
+    std::string name;
     int flow = 0;
     std::vector<std::string> neis;
 };
 
 
-using graph_t = std::unordered_map<std::string, node_t>;
+using graph_t = std::vector<node_t>;
 
 
 graph_t read_input() {
@@ -35,48 +36,55 @@ graph_t read_input() {
         begin = line.find("valve", end + 1);
         begin = line.find(' ', begin + 1) + 1;
 
-        g[from].flow = flow;
+        g.push_back({ from, flow, {} });
 
         while (begin < line.size()) {
             std::string to = line.substr(begin, 2);
-            g[from].neis.push_back(to);
+            g.back().neis.push_back(to);
 
             begin += 4;
         }
     }
 
+    std::sort(g.begin(), g.end(), [](const node_t& l, const node_t& r) {
+        return l.flow > r.flow;
+    });
+
     return g;
 }
 
 
-class working {
+class graph_builder {
 protected:
     std::unordered_map<std::string, int> name_to_id;
-    std::unordered_map<int, std::string> id_to_name;
 
     std::vector<std::vector<int>> g;
     std::vector<int> cost;
 
     std::uint64_t ALL_VISITED = 0;
+    std::uint64_t VALVES_WITH_PRESSURE = 0;
 
 public:
-    working(graph_t& p_g) : g(p_g.size(), std::vector<int>(p_g.size(), 0)), cost(p_g.size(), -1) {
+    graph_builder(graph_t& p_g) : g(p_g.size(), std::vector<int>(p_g.size(), 0)), cost(p_g.size(), -1) {
         int id_count = 0;
 
-        for (const auto& pair : p_g) {
-            std::string name = pair.first;
+        for (const auto& node : p_g) {
+            std::string name = node.name;
 
             auto iter = name_to_id.find(name);
             if (iter == name_to_id.cend()) {
-                id_to_name[id_count] = name;
                 name_to_id[name] = id_count;
 
                 id_count++;
             }
+
+            if (node.flow > 0) {
+                VALVES_WITH_PRESSURE++;
+            }
         }
 
-        for (const auto& pair : p_g) {
-            const int from_id = name_to_id[pair.first];
+        for (const auto& node : p_g) {
+            const int from_id = name_to_id[node.name];
 
             std::unordered_set<int> visited;
             std::queue<int> q;
@@ -84,7 +92,7 @@ public:
             q.push(from_id);
             visited.insert(from_id);
 
-            cost[from_id] = pair.second.flow;
+            cost[from_id] = node.flow;
             int distance = 1;
 
             while (!q.empty()) {
@@ -94,9 +102,7 @@ public:
                     const int cur = q.front();
                     q.pop();
 
-                    std::string cur_name = id_to_name[cur];
-
-                    for (const auto& nei : p_g[cur_name].neis) {
+                    for (const auto& nei : p_g[cur].neis) {
                         const int to_id = name_to_id[nei];
                         if (visited.count(to_id)) {
                             continue;
@@ -124,7 +130,7 @@ public:
 };
 
 
-class working_alone : public working {
+class solution: public graph_builder {
     struct cache_key_t {
         int id = -1;
         int remaining_time;
@@ -150,11 +156,33 @@ class working_alone : public working {
     std::unordered_map<cache_key_t, int, cache_key_hash> cache;
 
 public:
-    working_alone(graph_t& p_g) : working(p_g) { }
+    solution(graph_t& p_g) : graph_builder(p_g) {}
 
-    int most_pressure_release() {
+    int working_alone() {
         int id = name_to_id["AA"];
         return most_pressure_release(id, 30, 0);
+    }
+
+    int working_with_elephant() {
+        int id = name_to_id["AA"];
+
+        std::uint64_t all_valves_open = 0;
+        for (int i = 0; i < VALVES_WITH_PRESSURE; i++) {
+            all_valves_open <<= 1;
+            all_valves_open++;
+        }
+
+        int best_pressure = 0;
+        for (std::uint64_t state = 1; state < (all_valves_open / 2); state++) {
+            int pressure1 = most_pressure_release(id, 26, state);
+            
+            std::uint64_t opposite_state = (~state) & all_valves_open;
+            int pressure2 = most_pressure_release(id, 26, opposite_state);
+
+            best_pressure = std::max(pressure1 + pressure2, best_pressure);
+        }
+
+        return best_pressure;
     }
 
 private:
@@ -174,7 +202,7 @@ private:
 
         best_pressure = 0;
 
-        for (int i = 0; i < g.size(); i++) {
+        for (int i = 0; i < VALVES_WITH_PRESSURE; i++) {
             if (cost[i] == 0) {
                 continue;   /* no need to open valve with 0 pressure */
             }
@@ -185,6 +213,9 @@ private:
             }
 
             const int time_cost = g[id][i] + 1; /* time to reach and open */
+            if (time_cost > remaining_time) {
+                continue;
+            }
 
             const std::uint64_t cur_state = state | mask;
             const int cur_remaining_time = remaining_time - time_cost;
@@ -218,8 +249,11 @@ private:
 int main() {
     graph_t g = read_input();
 
-    int total_pressure = working_alone(g).most_pressure_release();
-    std::cout << "The most pressure which can be released: " << total_pressure << std::endl;
+    int total_pressure = solution(g).working_alone();
+    std::cout << "The most pressure released (working alone): " << total_pressure << std::endl;
+
+    total_pressure = solution(g).working_with_elephant();
+    std::cout << "The most pressure released (working with elephant): " << total_pressure << std::endl;
 
     return 0;
 }
