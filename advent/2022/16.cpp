@@ -47,7 +47,14 @@ graph_t read_input() {
     }
 
     std::sort(g.begin(), g.end(), [](const node_t& l, const node_t& r) {
-        return l.flow > r.flow;
+        if (l.flow > r.flow) {
+            return true;
+        }
+        else if (l.flow == r.flow) {
+            return l.name < r.name; /* AA should be right after valves with flow for cache size optimization (solution is without unordered_map). */
+        }
+
+        return false;
     });
 
     return g;
@@ -61,8 +68,8 @@ protected:
     std::vector<std::vector<int>> g;
     std::vector<int> cost;
 
-    std::uint64_t ALL_VISITED = 0;
-    std::uint64_t VALVES_WITH_PRESSURE = 0;
+    std::uint32_t ALL_VISITED = 0;
+    std::uint32_t VALVES_WITH_PRESSURE = 0;
 
 public:
     graph_builder(graph_t& p_g) : g(p_g.size(), std::vector<int>(p_g.size(), 0)), cost(p_g.size(), -1) {
@@ -131,32 +138,34 @@ public:
 
 
 class solution: public graph_builder {
-    struct cache_key_t {
-        int id = -1;
-        int remaining_time;
-        std::uint64_t state;
+    std::vector<std::uint32_t> cache;   /* using vector instead of unordered_map - only 16.252.928 elements are needed */
 
-        bool operator==(const cache_key_t& p_other) const {
-            return (id == p_other.id) && (remaining_time == p_other.remaining_time) && (state == p_other.state);
-        }
-    };
+    std::uint32_t ALL_VALVES_OPEN = 0;
+    std::uint32_t POSSIBLE_POSITIONS = 0;
 
-
-    struct cache_key_hash {
-        std::size_t operator()(const cache_key_t& key) const noexcept {
-            std::size_t h = std::hash<std::uint64_t>{}(key.state);
-
-            h ^= std::hash<int>{}(key.id) + 0x9e3779b9 + (h << 6) + (h >> 2);
-            h ^= std::hash<int>{}(key.remaining_time) + 0x9e3779b9 + (h << 6) + (h >> 2);
-
-            return h;
-        }
-    };
-
-    std::unordered_map<cache_key_t, int, cache_key_hash> cache;
+    const std::uint32_t MAX_TIME = 31;
 
 public:
-    solution(graph_t& p_g) : graph_builder(p_g) {}
+    solution(graph_t& p_g) : graph_builder(p_g) {
+        for (int i = 0; i < VALVES_WITH_PRESSURE; i++) {
+            ALL_VALVES_OPEN <<= 1;
+            ALL_VALVES_OPEN++;
+        }
+
+        auto count_bits_func = [](int value) -> int {
+            int size_in_bits = 0;
+            while (value > 0) {
+                size_in_bits++;
+                value >>= 1;
+            }
+
+            return size_in_bits;
+        };
+
+        const int MAX_STATE = std::uint32_t{ 1 } << VALVES_WITH_PRESSURE;
+        POSSIBLE_POSITIONS = VALVES_WITH_PRESSURE + 1; /* All valves with pressure + initial position "AA" (whose ID goes right after valves with pressure) */
+        cache = std::vector<std::uint32_t>(MAX_STATE * POSSIBLE_POSITIONS * MAX_TIME, -1);  /* cache size 16.252.928 */
+    }
 
     int working_alone() {
         int id = name_to_id["AA"];
@@ -166,17 +175,11 @@ public:
     int working_with_elephant() {
         int id = name_to_id["AA"];
 
-        std::uint64_t all_valves_open = 0;
-        for (int i = 0; i < VALVES_WITH_PRESSURE; i++) {
-            all_valves_open <<= 1;
-            all_valves_open++;
-        }
-
         int best_pressure = 0;
-        for (std::uint64_t state = 1; state < (all_valves_open / 2); state++) {
+        for (std::uint32_t state = 1; state < (ALL_VALVES_OPEN / 2); state++) {
             int pressure1 = most_pressure_release(id, 26, state);
             
-            std::uint64_t opposite_state = (~state) & all_valves_open;
+            std::uint32_t opposite_state = (~state) & ALL_VALVES_OPEN;
             int pressure2 = most_pressure_release(id, 26, opposite_state);
 
             best_pressure = std::max(pressure1 + pressure2, best_pressure);
@@ -186,7 +189,7 @@ public:
     }
 
 private:
-    int most_pressure_release(const int id, const int remaining_time, const std::uint64_t state) {
+    int most_pressure_release(const int id, const int remaining_time, const std::uint32_t state) {
         if (remaining_time <= 0) {
             return 0;
         }
@@ -207,7 +210,7 @@ private:
                 continue;   /* no need to open valve with 0 pressure */
             }
 
-            const std::uint64_t mask = (std::uint64_t{ 1 } << i);
+            const std::uint32_t mask = (std::uint32_t{ 1 } << i);
             if ((mask & state) != 0) {
                 continue;   /* node is visited (max. number of nodes: 60) */
             }
@@ -217,7 +220,7 @@ private:
                 continue;
             }
 
-            const std::uint64_t cur_state = state | mask;
+            const std::uint32_t cur_state = state | mask;
             const int cur_remaining_time = remaining_time - time_cost;
 
             const int new_pressure = cost[i] * cur_remaining_time + most_pressure_release(i, cur_remaining_time, cur_state);
@@ -229,18 +232,13 @@ private:
         return best_pressure;
     }
 
-    int get_pressure_from_cache(const int id, const int remaining_time, const std::uint64_t state) {
-        const cache_key_t key{ id, remaining_time, state };
-        auto iter = cache.find(key);
-        if (iter == cache.cend()) {
-            return -1;
-        }
-
-        return iter->second;
+    int get_pressure_from_cache(const int id, const int remaining_time, const std::uint32_t state) {
+        std::uint32_t key = (state * POSSIBLE_POSITIONS + id) * MAX_TIME + remaining_time;
+        return cache[key];
     }
 
-    void set_pressure_to_cache(const int id, const int remaining_time, const std::uint64_t state, const int pressure) {
-        const cache_key_t key{ id, remaining_time, state };
+    void set_pressure_to_cache(const int id, const int remaining_time, const std::uint32_t state, const int pressure) {
+        std::uint32_t key = (state * POSSIBLE_POSITIONS + id) * MAX_TIME + remaining_time;
         cache[key] = pressure;
     }
 };
