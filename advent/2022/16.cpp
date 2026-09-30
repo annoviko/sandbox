@@ -1,6 +1,6 @@
+#include <algorithm>
 #include <iostream>
 #include <fstream>
-#include <regex>
 #include <queue>
 #include <string>
 #include <vector>
@@ -132,7 +132,7 @@ public:
 
 
 class solution: public graph_builder {
-    std::vector<std::uint32_t> cache;   /* using vector instead of unordered_map - only 16.252.928 elements are needed */
+    std::vector<std::int32_t> cache;   /* using vector instead of unordered_map - only 16.252.928 elements are needed */
 
     std::uint32_t ALL_VALVES_OPEN = 0;
     std::uint32_t MAX_ID = 0;
@@ -158,7 +158,7 @@ public:
 
         const int MAX_STATE = std::uint32_t{ 1 } << VALVES_WITH_PRESSURE;
         MAX_ID = VALVES_WITH_PRESSURE + 1; /* All valves with pressure + initial position "AA" (whose ID goes right after valves with pressure) */
-        cache = std::vector<std::uint32_t>(MAX_STATE * MAX_ID * MAX_TIME, -1);  /* cache size 16.252.928 */
+        cache = std::vector<std::int32_t>(MAX_STATE * MAX_ID * MAX_TIME, -1);  /* cache size 16.252.928 */
     }
 
     int working_alone() {
@@ -196,10 +196,6 @@ private:
         best_pressure = 0;
 
         for (int i = 0; i < VALVES_WITH_PRESSURE; i++) {
-            if (cost[i] == 0) {
-                continue;   /* no need to open valve with 0 pressure */
-            }
-
             const std::uint32_t mask = (std::uint32_t{ 1 } << i);
             if ((mask & state) != 0) {
                 continue;   /* node is visited (max. number of nodes: 60) */
@@ -237,10 +233,11 @@ private:
 int main() {
     graph_t g = read_input();
 
-    int total_pressure = solution(g).working_alone();
+    solution s = solution(g);
+    int total_pressure = s.working_alone();
     std::cout << "The most pressure released (working alone): " << total_pressure << std::endl;
 
-    total_pressure = solution(g).working_with_elephant();
+    total_pressure = s.working_with_elephant();
     std::cout << "The most pressure released (working with elephant): " << total_pressure << std::endl;
 
     return 0;
