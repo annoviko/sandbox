@@ -68,7 +68,6 @@ protected:
     std::vector<std::vector<int>> g;
     std::vector<int> cost;
 
-    std::uint32_t ALL_VISITED = 0;
     std::uint32_t VALVES_WITH_PRESSURE = 0;
 
 public:
@@ -128,11 +127,6 @@ public:
                 distance++;
             }
         }
-
-        for (int i = 0; i < g.size(); i++) {
-            ALL_VISITED <<= 1;
-            ALL_VISITED++;
-        }
     }
 };
 
@@ -141,7 +135,7 @@ class solution: public graph_builder {
     std::vector<std::uint32_t> cache;   /* using vector instead of unordered_map - only 16.252.928 elements are needed */
 
     std::uint32_t ALL_VALVES_OPEN = 0;
-    std::uint32_t POSSIBLE_POSITIONS = 0;
+    std::uint32_t MAX_ID = 0;
 
     const std::uint32_t MAX_TIME = 31;
 
@@ -163,8 +157,8 @@ public:
         };
 
         const int MAX_STATE = std::uint32_t{ 1 } << VALVES_WITH_PRESSURE;
-        POSSIBLE_POSITIONS = VALVES_WITH_PRESSURE + 1; /* All valves with pressure + initial position "AA" (whose ID goes right after valves with pressure) */
-        cache = std::vector<std::uint32_t>(MAX_STATE * POSSIBLE_POSITIONS * MAX_TIME, -1);  /* cache size 16.252.928 */
+        MAX_ID = VALVES_WITH_PRESSURE + 1; /* All valves with pressure + initial position "AA" (whose ID goes right after valves with pressure) */
+        cache = std::vector<std::uint32_t>(MAX_STATE * MAX_ID * MAX_TIME, -1);  /* cache size 16.252.928 */
     }
 
     int working_alone() {
@@ -191,10 +185,6 @@ public:
 private:
     int most_pressure_release(const int id, const int remaining_time, const std::uint32_t state) {
         if (remaining_time <= 0) {
-            return 0;
-        }
-
-        if (state == ALL_VISITED) {
             return 0;
         }
 
@@ -233,12 +223,12 @@ private:
     }
 
     int get_pressure_from_cache(const int id, const int remaining_time, const std::uint32_t state) {
-        std::uint32_t key = (state * POSSIBLE_POSITIONS + id) * MAX_TIME + remaining_time;
+        std::uint32_t key = (state * MAX_ID + id) * MAX_TIME + remaining_time;
         return cache[key];
     }
 
     void set_pressure_to_cache(const int id, const int remaining_time, const std::uint32_t state, const int pressure) {
-        std::uint32_t key = (state * POSSIBLE_POSITIONS + id) * MAX_TIME + remaining_time;
+        std::uint32_t key = (state * MAX_ID + id) * MAX_TIME + remaining_time;
         cache[key] = pressure;
     }
 };
