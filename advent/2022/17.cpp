@@ -1,9 +1,14 @@
 #include <fstream>
 #include <iostream>
+#include <list>
 #include <string>
 #include <vector>
 
-#include <conio.h>
+
+#if 0
+    #define CONSOLE_VISUALIZATION
+    #include <conio.h>
+#endif
 
 
 struct position_t {
@@ -11,16 +16,6 @@ struct position_t {
     int c = 0;
 };
 
-/*
- 012345
-0 #
-1###
-2 #
-3
-4
-5
-
-*/
 
 const std::vector<std::vector<position_t>> FIGURES = {
     { { 0, 0 }, { 0, 1 }, { 0, 2 }, { 0, 3 } },
@@ -49,21 +44,99 @@ private:
     std::string jets;
     std::vector<std::vector<bool>> field;
 
-    int height = 0;
+    std::uint64_t height = 0;
 
 public:
     solution(const std::string& j) : jets(j) { }
 
-    int tower_height(int n) {
+    std::uint64_t tower_height_for_2022_stones() {
         int iteration = 0;
 
-        for (int i = 0; i < n; i++) {
+        for (int i = 0; i < 2022; i++) {
             const int index_figure = i % FIGURES.size();
             iteration = simulate(index_figure, iteration);
         }
 
         return height;
     }
+
+    std::uint64_t tower_height_for_1000000000000_stones() {
+        int iteration = 0;
+
+        const std::uint64_t verification_steps = 2;
+        const std::uint64_t max_size = 50;    /* pattern size */
+        std::list<std::uint64_t> pattern;
+        std::list<std::uint64_t> current;
+
+        std::uint64_t loop_begins_at = 2022;  /* assume that loops will have a place after 2022 figures */
+        std::uint64_t loop_size = 0;
+        std::uint64_t loops_counter = 0;
+
+        std::uint64_t previous_height = 0;
+        std::uint64_t current_figure_index = 0;
+
+        std::vector<std::uint64_t> loop_elements;
+        std::uint64_t loop_total_height = 0;
+
+        /* find loop size and its prefix */
+        for (std::uint64_t i = 0; i < 1000000000000; i++) {
+            const std::uint64_t index_figure = i % FIGURES.size();
+            iteration = simulate(index_figure, iteration);
+
+            std::uint64_t delta = height - previous_height;
+            previous_height = height;
+
+            if (i >= 2022) {
+                if (pattern.size() < max_size) {
+                    pattern.push_back(delta);
+                }
+                else if (current.size() < max_size) {
+                    current.push_back(delta);
+                }
+                else {
+                    current.pop_front();
+                    current.push_back(delta);
+                }
+
+                if (loops_counter == verification_steps - 1) {
+                    loop_elements.push_back(delta);
+                    loop_total_height += delta;
+                }
+
+                if (pattern == current) {
+                    std::uint64_t detected_loop_size = i - loop_begins_at - pattern.size();
+                    if (loop_size == detected_loop_size) {
+                        loops_counter++;
+                        if (loops_counter == verification_steps) {
+                            current_figure_index = i + 1;
+                            break;
+                        }
+                    }
+                    else {
+                        loops_counter = 0;
+                    }
+
+                    loop_size = detected_loop_size;
+                    loop_begins_at = i - pattern.size();
+
+                    current.clear();
+                }
+            }
+        }
+
+        /* compute height */
+        std::uint64_t remaining_figures = 1000000000000 - current_figure_index;
+        loops_counter = remaining_figures / loop_size;
+        remaining_figures = remaining_figures % loop_size;
+
+        std::uint64_t total_height = height + loops_counter * loop_total_height;
+        for (std::uint64_t i = 0; i < remaining_figures; i++) {
+            total_height += loop_elements[i];
+        }
+
+        return total_height;
+    }
+
 
 private:
     int simulate(int index, int iteration) {
@@ -83,7 +156,9 @@ private:
             coord[i].r = (field.size() - 1) - coord[i].r - dr;
         }
 
-        //visualize(coord);
+#if defined(CONSOLE_VISUALIZATION)
+        visualize(coord);
+#endif
 
         int previous_row = -1;
         while (previous_row != coord[0].r) {
@@ -92,22 +167,25 @@ private:
             int dc = get_dc(iteration);
 
             move_figure_by_jet(dc, coord);
-            //visualize(coord);
-
             move_figure_by_gravity(coord);
-            //visualize(coord);
+
+#if defined(CONSOLE_VISUALIZATION)
+            visualize(coord);
+#endif
 
             iteration++;
         }
 
-        int new_height = coord[0].r + 1;    /* 0 - the top of the figure */
+        std::uint64_t new_height = coord[0].r + 1;    /* 0 - the top of the figure */
         height = std::max(height, new_height);
 
         for (const auto& p : coord) {
             field[p.r][p.c] = true;
         }
 
-        //visualize({});
+#if defined(CONSOLE_VISUALIZATION)
+        visualize({});
+#endif
 
         return iteration;
     }
@@ -152,6 +230,7 @@ private:
         }
     }
 
+#if defined(CONSOLE_VISUALIZATION)
     void visualize(const std::vector<position_t>& figure) {
         system("cls");
         std::cout << "Height: " << height << "\n\n";
@@ -178,13 +257,15 @@ private:
         std::cout << "+-------+" << std::endl;
         _getch();
     }
+#endif
 };
 
 
 int main() {
     auto jets = read_input();
 
-    std::cout << "The height of the tower of rocks: " << solution(jets).tower_height(2022) << std::endl;
+    std::cout << "The height of the tower of rocks (2022):          " << solution(jets).tower_height_for_2022_stones() << std::endl;
+    std::cout << "The height of the tower of rocks (1000000000000): " << solution(jets).tower_height_for_1000000000000_stones() << std::endl;
 
     return 0;
 }
